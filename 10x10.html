@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>10x10 ピクセルイラストパズル（ノノグラム）</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 10x10 Grid styling */
+        .nonogram-grid {
+            display: grid;
+            grid-template-columns: auto repeat(10, minmax(0, 1fr));
+            gap: 1px;
+            background-color: #cbd5e1;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+        }
+
+        /* Cell base */
+        .grid-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* 5x5 Grid line highlights */
+        .border-r-thick { border-right: 2px solid #475569 !important; }
+        .border-b-thick { border-bottom: 2px solid #475569 !important; }
+
+        /* Cell States */
+        .cell-empty { background-color: #ffffff; }
+        .cell-empty:hover { background-color: #f1f5f9; }
+        
+        .cell-filled {
+            background-color: #1e293b;
+            animation: popIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .cell-cross {
+            background-color: #f8fafc;
+            color: #ef4444;
+            font-size: 1.1rem;
+        }
+        .cell-cross::after {
+            content: '✕';
+            color: #ef4444;
+            font-weight: 900;
+        }
+
+        /* Hint Containers */
+        .col-hint-cell {
+            background-color: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 4px 2px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #334155;
+            line-height: 1.1;
+        }
+
+        .row-hint-cell {
+            background-color: #f1f5f9;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 2px 6px;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #334155;
+            white-space: nowrap;
+        }
+
+        .hint-dim {
+            opacity: 0.35;
+            text-decoration: line-through;
+        }
+
+        /* Canvas Pop Effect */
+        @keyframes popIn {
+            0% { transform: scale(0.7); }
+            100% { transform: scale(1); }
+        }
+
+        /* Custom Bounce Animation */
+        .bounce-active {
+            animation: bounceSoft 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes bounceSoft {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* Glassmorphism panel */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Confetti Overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 min-h-screen text-slate-800 flex flex-col justify-between selection:bg-purple-200">
+
+    <!-- Confetti canvas for victory animation -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Header Bar -->
+    <header class="w-full max-w-2xl mx-auto pt-4 px-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="bg-indigo-600 text-white p-2.5 rounded-2xl shadow-lg shadow-indigo-200 flex items-center justify-center">
+                <i class="fa-solid fa-shapes text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">ピクセルパズル</h1>
+                <p class="text-xs text-slate-500 font-bold">10x10 イラストロジック</p>
+            </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center gap-2">
+            <button id="btn-sound" class="w-10 h-10 rounded-xl bg-white shadow-md text-slate-600 hover:text-indigo-600 flex items-center justify-center transition active:scale-95" title="効果音/BGM切替">
+                <i class="fa-solid fa-volume-high text-lg"></i>
+            </button>
+            <button id="btn-gallery" class="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-md shadow-purple-200 flex items-center gap-1.5 transition active:scale-95">
+                <i class="fa-solid fa-images"></i> ギャラリー
+            </button>
+        </div>
+    </header>
+
+    <main class="w-full max-w-xl mx-auto p-4 flex-1 flex flex-col justify-center items-center">
+        <!-- Stage Information Banner -->
+        <div class="w-full mb-3 flex items-center justify-between bg-white/70 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white shadow-sm">
+            <div class="flex items-center gap-2">
+                <button id="btn-prev-stage" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-sm font-bold transition">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <div class="text-center">
+                    <span id="stage-number-badge" class="text-xs font-extrabold uppercase tracking-wide text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">STAGE 01</span>
+                    <h2 id="stage-title-text" class="text-sm font-bold text-slate-700">???</h2>
+                </div>
+                <button id="btn-next-stage" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-sm font-bold transition">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Clear Indicator / Timer -->
+            <div id="stage-status-indicator" class="flex items-center gap-1.5 text-xs font-bold text-amber-500 bg-amber-50 px-3 py-1.5 rounded-full">
+                <i class="fa-solid fa-star"></i>
+                <span id="status-text">挑戦中</span>
+            </div>
+        </div>
+
+        <!-- Nonogram Board Container -->
+        <div class="w-full max-w-md bg-white p-3 rounded-3xl shadow-xl shadow-indigo-100 border border-slate-100 flex flex-col items-center">
+            <div id="nonogram-board" class="nonogram-grid w-full select-none">
+                <!-- Board will be generated via JavaScript -->
+            </div>
+        </div>
+
+        <!-- Gameplay Controls & Tool Switcher -->
+        <div class="w-full max-w-md mt-4 flex flex-col gap-3">
+            <!-- Mode Selector Switcher -->
+            <div class="grid grid-cols-2 gap-2 bg-slate-200/80 p-1.5 rounded-2xl">
+                <button id="tool-fill" class="py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm bg-indigo-600 text-white">
+                    <i class="fa-solid fa-paint-brush text-base"></i> ぬる (マス目)
+                </button>
+                <button id="tool-cross" class="py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900">
+                    <i class="fa-solid fa-xmark text-lg text-red-500"></i> × をつける
+                </button>
+            </div>
+
+            <!-- Action Buttons: Reset & Hint -->
+            <div class="flex items-center justify-between gap-3">
+                <button id="btn-reset" class="flex-1 py-2.5 px-4 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95">
+                    <i class="fa-solid fa-rotate-left"></i> やりなおし
+                </button>
+                <button id="btn-hint" class="flex-1 py-2.5 px-4 rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition active:scale-95">
+                    <i class="fa-solid fa-lightbulb"></i> ヒント (残 <span id="hint-count-text">3</span>)
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="w-full text-center py-3 text-xs text-slate-400 font-medium">
+        10x10 Nonogram Puzzle Game &bull; Dedicated to Fun & Logic
+    </footer>
+
+    <!-- Gallery / Stage Selection Modal -->
+    <div id="modal-gallery" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-6 transform scale-95 transition-transform duration-300 flex flex-col max-h-[85vh]">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-images text-purple-600 text-xl"></i>
+                    <h3 class="text-lg font-extrabold text-slate-800">ステージ選択 & ギャラリー</h3>
+                </div>
+                <button id="btn-close-gallery" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 overflow-y-auto p-1 flex-1">
+                <!-- Dynamic Stage Cards -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Victory Modal -->
+    <div id="modal-clear" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center transform scale-95 transition-transform duration-300">
+            <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-3 animate-bounce">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h3 class="text-2xl font-black text-slate-800 mb-1">STAGE CLEAR!</h3>
+            <p class="text-xs text-slate-500 font-bold mb-4">おめでとうございます！イラストが完成しました！</p>
+
+            <!-- Complete Pixel Art Preview Canvas -->
+            <div class="w-40 h-40 mx-auto bg-slate-100 rounded-2xl p-2 border border-slate-200 shadow-inner flex items-center justify-center mb-4">
+                <canvas id="clear-art-canvas" width="160" height="160" class="rounded-lg shadow-sm"></canvas>
+            </div>
+
+            <h4 id="clear-art-title" class="text-lg font-extrabold text-indigo-600 mb-6">「赤リンゴ」</h4>
+
+            <div class="flex flex-col gap-2">
+                <button id="btn-next-stage-modal" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-extrabold rounded-xl shadow-lg shadow-indigo-200 transition active:scale-95">
+                    次のステージへ <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+                <button id="btn-gallery-modal" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition">
+                    ステージ一覧へ戻る
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 10x10 Nonogram Stage Master Data
+         * Grid array: 10x10 matrix (1 = filled, 0 = empty)
+         * Color map: dynamic display colors for victory art rendering
+         */
+        const STAGES = [
+            {
+                id: 1,
+                title: "赤リンゴ",
+                color: "#ef4444",
+                secondaryColor: "#22c55e",
+                grid: [
+                    [0,0,0,0,1,1,0,0,0,0],
+                    [0,0,0,1,0,0,1,0,0,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,0,1,1,0,0,1,1,0,0],
+                    [0,0,0,0,0,0,0,0,0,0]
+                ]
+            },
+            {
+                id: 2,
+                title: "きのこ",
+                color: "#f97316",
+                secondaryColor: "#fef3c7",
+                grid: [
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,1,1,0,1,1,0,1,1,0],
+                    [0,1,1,0,1,1,0,1,1,0],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,1,0,0,1,0,0,0],
+                    [0,0,0,1,0,0,1,0,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0]
+                ]
+            },
+            {
+                id: 3,
+                title: "お星さま",
+                color: "#eab308",
+                secondaryColor: "#fef08a",
+                grid: [
+                    [0,0,0,0,1,1,0,0,0,0],
+                    [0,0,0,0,1,1,0,0,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,0,1,1,0,0,1,1,0,0],
+                    [0,1,1,0,0,0,0,1,1,0],
+                    [0,1,0,0,0,0,0,0,1,0],
+                    [0,0,0,0,0,0,0,0,0,0]
+                ]
+            },
+            {
+                id: 4,
+                title: "スマイル",
+                color: "#3b82f6",
+                secondaryColor: "#93c5fd",
+                grid: [
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,1,1,0,0,0,0,1,1,0],
+                    [0,1,0,0,0,0,0,0,1,0],
+                    [1,0,0,1,0,0,1,0,0,1],
+                    [1,0,0,1,0,0,1,0,0,1],
+                    [1,0,0,0,0,0,0,0,0,1],
+                    [1,0,1,0,0,0,0,1,0,1],
+                    [0,1,0,1,1,1,1,0,1,0],
+                    [0,1,1,0,0,0,0,1,1,0],
+                    [0,0,0,1,1,1,1,0,0,0]
+                ]
+            },
+            {
+                id: 5,
+                title: "ロケット",
+                color: "#8b5cf6",
+                secondaryColor: "#38bdf8",
+                grid: [
+                    [0,0,0,0,1,1,0,0,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,1,0,0,1,0,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,1,0,1,0,0,1,0,1,0],
+                    [0,0,0,1,0,0,1,0,0,0]
+                ]
+            },
+            {
+                id: 6,
+                title: "ねこちゃん",
+                color: "#ec4899",
+                secondaryColor: "#fbcfe8",
+                grid: [
+                    [0,1,1,0,0,0,0,1,1,0],
+                    [0,1,1,1,0,0,1,1,1,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [1,0,1,1,1,1,1,1,0,1],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [0,1,1,0,1,1,0,1,1,0],
+                    [0,0,1,1,0,0,1,1,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,0,1,1,0,0,0,0]
+                ]
+            },
+            {
+                id: 7,
+                title: "ハート",
+                color: "#f43f5e",
+                secondaryColor: "#fecdd3",
+                grid: [
+                    [0,0,0,0,0,0,0,0,0,0],
+                    [0,1,1,1,0,0,1,1,1,0],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [1,1,1,1,1,1,1,1,1,1],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,0,0,1,1,1,1,0,0,0],
+                    [0,0,0,0,1,1,0,0,0,0],
+                    [0,0,0,0,0,0,0,0,0,0]
+                ]
+            },
+            {
+                id: 8,
+                title: "ヨット",
+                color: "#06b6d4",
+                secondaryColor: "#f59e0b",
+                grid: [
+                    [0,0,0,0,1,0,0,0,0,0],
+                    [0,0,0,1,1,0,0,0,0,0],
+                    [0,0,1,1,1,0,0,0,0,0],
+                    [0,1,1,1,1,0,0,0,0,0],
+                    [1,1,1,1,1,0,0,0,0,0],
+                    [0,0,0,0,1,0,0,0,0,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,1,1,1,1,1,1,1,1,0],
+                    [0,0,1,1,1,1,1,1,0,0],
+                    [0,0,0,0,0,0,0,0,0,0]
+                ]
+            }
+        ];
+
+        /**
+         * Web Audio API Synthesizer for rich sound effects without external audio files
+         */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.isMuted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+
+            playPop(freq = 440) {
+                if (this.isMuted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(freq * 1.5, this.ctx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playCross() {
+                if (this.isMuted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.06);
+
+                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.06);
+            }
+
+            playFanfare() {
+                if (this.isMuted) return;
+                this.init();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.1);
+
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime + idx * 0.1);
+                    gain.gain.linearRampToValueAtTime(0.2, this.ctx.currentTime + idx * 0.1 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.1 + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(this.ctx.currentTime + idx * 0.1);
+                    osc.stop(this.ctx.currentTime + idx * 0.1 + 0.35);
+                });
+            }
+        }
+
+        const audio = new SoundEngine();
+
+        // Game State Variables
+        let currentStageIndex = 0;
+        let currentGridState = []; // 10x10 matrix: 0 = empty, 1 = filled, 2 = cross
+        let currentTool = 'fill';  // 'fill' or 'cross'
+        let isPointerDown = false;
+        let dragModeValue = null;   // Cell value applied during current drag sequence
+        let hintsRemaining = 3;
+        let clearedStageIds = new Set();
+
+        // Local Storage Key
+        const SAVE_KEY = 'nonogram_puzzle_save_data';
+
+        /**
+         * Calculates row hints array from solution matrix
+         */
+        function calculateRowHints(grid) {
+            return grid.map(row => {
+                const hints = [];
+                let count = 0;
+                for (let val of row) {
+                    if (val === 1) {
+                        count++;
+                    } else if (count > 0) {
+                        hints.push(count);
+                        count = 0;
+                    }
+                }
+                if (count > 0) hints.push(count);
+                return hints.length > 0 ? hints : [0];
+            });
+        }
+
+        /**
+         * Calculates column hints array from solution matrix
+         */
+        function calculateColHints(grid) {
+            const cols = grid[0].length;
+            const colHints = [];
+            for (let c = 0; c < cols; c++) {
+                const hints = [];
+                let count = 0;
+                for (let r = 0; r < grid.length; r++) {
+                    if (grid[r][c] === 1) {
+                        count++;
+                    } else if (count > 0) {
+                        hints.push(count);
+                        count = 0;
+                    }
+                }
+                if (count > 0) hints.push(count);
+                colHints.push(hints.length > 0 ? hints : [0]);
+            }
+            return colHints;
+        }
+
+        /**
+         * Renders the 10x10 nonogram board grid
+         */
+        function renderBoard() {
+            const stage = STAGES[currentStageIndex];
+            const boardEl = document.getElementById('nonogram-board');
+            boardEl.innerHTML = '';
+
+            const rowHints = calculateRowHints(stage.grid);
+            const colHints = calculateColHints(stage.grid);
+
+            // 1. Top-Left Empty Corner Cell
+            const corner = document.createElement('div');
+            corner.className = 'bg-slate-200 border-r-thick border-b-thick rounded-tl-md flex items-center justify-center text-xs text-slate-400 font-bold';
+            corner.innerText = '10x10';
+            boardEl.appendChild(corner);
+
+            // 2. Column Hint Cells
+            for (let c = 0; c < 10; c++) {
+                const colCell = document.createElement('div');
+                let classes = 'col-hint-cell border-b-thick';
+                if (c === 4) classes += ' border-r-thick';
+                colCell.className = classes;
+                colCell.id = `col-hint-${c}`;
+
+                colHints[c].forEach(num => {
+                    const span = document.createElement('span');
+                    span.innerText = num;
+                    colCell.appendChild(span);
+                });
+                boardEl.appendChild(colCell);
+            }
+
+            // 3. Grid Rows (Row Hints + 10 Cells)
+            for (let r = 0; r < 10; r++) {
+                // Row Hint
+                const rowCell = document.createElement('div');
+                let rowClasses = 'row-hint-cell border-r-thick';
+                if (r === 4) rowClasses += ' border-b-thick';
+                rowCell.className = rowClasses;
+                rowCell.id = `row-hint-${r}`;
+
+                rowHints[r].forEach(num => {
+                    const span = document.createElement('span');
+                    span.innerText = num;
+                    rowCell.appendChild(span);
+                });
+                boardEl.appendChild(rowCell);
+
+                // Grid Cells
+                for (let c = 0; c < 10; c++) {
+                    const cell = document.createElement('div');
+                    let cellClasses = 'grid-cell';
+
+                    if (c === 4) cellClasses += ' border-r-thick';
+                    if (r === 4) cellClasses += ' border-b-thick';
+
+                    cell.className = cellClasses;
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.id = `cell-${r}-${c}`;
+
+                    updateCellAppearance(cell, currentGridState[r][c]);
+
+                    // Event Listeners for Interaction
+                    cell.addEventListener('mousedown', (e) => handlePointerStart(r, c, e));
+                    cell.addEventListener('mouseenter', () => handlePointerEnter(r, c));
+                    cell.addEventListener('touchstart', (e) => handleTouchStart(r, c, e), { passive: false });
+
+                    boardEl.appendChild(cell);
+                }
+            }
+
+            updateStageHeader();
+            checkHintsStatus();
+        }
+
+        function updateCellAppearance(cellEl, stateValue) {
+            cellEl.classList.remove('cell-empty', 'cell-filled', 'cell-cross');
+            if (stateValue === 1) {
+                cellEl.classList.add('cell-filled');
+            } else if (stateValue === 2) {
+                cellEl.classList.add('cell-cross');
+            } else {
+                cellEl.classList.add('cell-empty');
+            }
+        }
+
+        /**
+         * Checks whether rows and columns match solution to strike-through hint numbers
+         */
+        function checkHintsStatus() {
+            const stage = STAGES[currentStageIndex];
+            
+            // Check rows
+            for (let r = 0; r < 10; r++) {
+                const isRowComplete = stage.grid[r].every((targetVal, c) => {
+                    const userVal = currentGridState[r][c];
+                    return (targetVal === 1 && userVal === 1) || (targetVal === 0 && userVal !== 1);
+                });
+                const hintEl = document.getElementById(`row-hint-${r}`);
+                if (hintEl) {
+                    if (isRowComplete) hintEl.classList.add('hint-dim');
+                    else hintEl.classList.remove('hint-dim');
+                }
+            }
+
+            // Check cols
+            for (let c = 0; c < 10; c++) {
+                let isColComplete = true;
+                for (let r = 0; r < 10; r++) {
+                    const targetVal = stage.grid[r][c];
+                    const userVal = currentGridState[r][c];
+                    if ((targetVal === 1 && userVal !== 1) || (targetVal === 0 && userVal === 1)) {
+                        isColComplete = false;
+                        break;
+                    }
+                }
+                const hintEl = document.getElementById(`col-hint-${c}`);
+                if (hintEl) {
+                    if (isColComplete) hintEl.classList.add('hint-dim');
+                    else hintEl.classList.remove('hint-dim');
+                }
+            }
+        }
+
+        function handlePointerStart(r, c, e) {
+            if (e) e.preventDefault();
+            isPointerDown = true;
+            const currentState = currentGridState[r][c];
+
+            if (currentTool === 'fill') {
+                dragModeValue = (currentState === 1) ? 0 : 1;
+            } else { // 'cross'
+                dragModeValue = (currentState === 2) ? 0 : 2;
+            }
+
+            applyCellAction(r, c, dragModeValue);
+        }
+
+        function handlePointerEnter(r, c) {
+            if (isPointerDown && dragModeValue !== null) {
+                applyCellAction(r, c, dragModeValue);
+            }
+        }
+
+        function handleTouchStart(r, c, e) {
+            if (e.cancelable) e.preventDefault();
+            handlePointerStart(r, c, e);
+        }
+
+        // Global touch drag handling using elementFromPoint
+        document.addEventListener('touchmove', (e) => {
+            if (!isPointerDown) return;
+            const touch = e.touches[0];
+            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+
+            if (targetEl && targetEl.dataset && targetEl.dataset.row !== undefined) {
+                const r = parseInt(targetEl.dataset.row);
+                const c = parseInt(targetEl.dataset.col);
+                applyCellAction(r, c, dragModeValue);
+            }
+        }, { passive: false });
+
+        document.addEventListener('mouseup', () => {
+            isPointerDown = false;
+            dragModeValue = null;
+        });
+        document.addEventListener('touchend', () => {
+            isPointerDown = false;
+            dragModeValue = null;
+        });
+
+        function applyCellAction(r, c, newValue) {
+            if (currentGridState[r][c] === newValue) return;
+
+            currentGridState[r][c] = newValue;
+            const cellEl = document.getElementById(`cell-${r}-${c}`);
+            if (cellEl) {
+                updateCellAppearance(cellEl, newValue);
+            }
+
+            // Play audio based on tool action
+            if (newValue === 1) audio.playPop(350 + (r + c) * 20);
+            else if (newValue === 2) audio.playCross();
+
+            checkHintsStatus();
+            checkVictoryCondition();
+        }
+
+        function checkVictoryCondition() {
+            const stage = STAGES[currentStageIndex];
+            
+            // Check if all 1s match and no 0 is filled as 1
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    const target = stage.grid[r][c];
+                    const user = currentGridState[r][c];
+                    if (target === 1 && user !== 1) return false;
+                    if (target === 0 && user === 1) return false;
+                }
+            }
+
+            // STAGE CLEARED!
+            clearedStageIds.add(stage.id);
+            saveProgress();
+            audio.playFanfare();
+            triggerConfetti();
+            showClearModal();
+            updateStageHeader();
+            return true;
+        }
+
+        function drawPixelArt(canvas, stageGrid, primaryColor, secondaryColor) {
+            const ctx = canvas.getContext('2d');
+            const cellSize = canvas.width / 10;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    if (stageGrid[r][c] === 1) {
+                        ctx.fillStyle = primaryColor;
+                    } else {
+                        ctx.fillStyle = secondaryColor || '#f8fafc';
+                    }
+                    ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        function showClearModal() {
+            const stage = STAGES[currentStageIndex];
+            document.getElementById('clear-art-title').innerText = `「${stage.title}」`;
+
+            const canvas = document.getElementById('clear-art-canvas');
+            drawPixelArt(canvas, stage.grid, stage.color, stage.secondaryColor);
+
+            const modal = document.getElementById('modal-clear');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+        }
+
+        function hideClearModal() {
+            const modal = document.getElementById('modal-clear');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+        }
+
+        function openGalleryModal() {
+            renderGallery();
+            const modal = document.getElementById('modal-gallery');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+            modal.firstElementChild.classList.add('scale-100');
+        }
+
+        function closeGalleryModal() {
+            const modal = document.getElementById('modal-gallery');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+        }
+
+        function renderGallery() {
+            const container = document.getElementById('gallery-grid');
+            container.innerHTML = '';
+
+            STAGES.forEach((stage, idx) => {
+                const isCleared = clearedStageIds.has(stage.id);
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-2xl border flex flex-col items-center justify-between cursor-pointer transition transform hover:-translate-y-1 ${
+                    isCleared ? 'bg-white border-purple-200 shadow-md' : 'bg-slate-50 border-slate-200 opacity-75'
+                }`;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 80;
+                canvas.height = 80;
+                canvas.className = 'rounded-lg border border-slate-200 mb-2';
+
+                if (isCleared) {
+                    drawPixelArt(canvas, stage.grid, stage.color, stage.secondaryColor);
+                } else {
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#e2e8f0';
+                    ctx.fillRect(0, 0, 80, 80);
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '24px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('?', 40, 40);
+                }
+
+                card.appendChild(canvas);
+
+                const info = document.createElement('div');
+                info.className = 'text-center';
+                info.innerHTML = `
+                    <div class="text-[10px] font-extrabold text-indigo-500 uppercase">STAGE ${stage.id}</div>
+                    <div class="text-xs font-bold text-slate-700">${isCleared ? stage.title : '???'}</div>
+                `;
+                card.appendChild(info);
+
+                card.addEventListener('click', () => {
+                    loadStage(idx);
+                    closeGalleryModal();
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        function giveHint() {
+            if (hintsRemaining <= 0) return;
+            const stage = STAGES[currentStageIndex];
+
+            // Find first uncompleted filled cell
+            const unrevealed = [];
+            for (let r = 0; r < 10; r++) {
+                for (let c = 0; c < 10; c++) {
+                    if (stage.grid[r][c] === 1 && currentGridState[r][c] !== 1) {
+                        unrevealed.push({ r, c });
+                    }
+                }
+            }
+
+            if (unrevealed.length > 0) {
+                // Randomly choose 1 hint cell
+                const choice = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+                currentGridState[choice.r][choice.c] = 1;
+
+                hintsRemaining--;
+                document.getElementById('hint-count-text').innerText = hintsRemaining;
+
+                const cellEl = document.getElementById(`cell-${choice.r}-${choice.c}`);
+                if (cellEl) {
+                    updateCellAppearance(cellEl, 1);
+                    cellEl.classList.add('bounce-active');
+                    setTimeout(() => cellEl.classList.remove('bounce-active'), 300);
+                }
+
+                audio.playPop(600);
+                checkHintsStatus();
+                checkVictoryCondition();
+            }
+        }
+
+        function resetStage() {
+            currentGridState = Array(10).fill(0).map(() => Array(10).fill(0));
+            hintsRemaining = 3;
+            document.getElementById('hint-count-text').innerText = hintsRemaining;
+            renderBoard();
+        }
+
+        function loadStage(idx) {
+            currentStageIndex = idx;
+            hintsRemaining = 3;
+            document.getElementById('hint-count-text').innerText = hintsRemaining;
+            currentGridState = Array(10).fill(0).map(() => Array(10).fill(0));
+            renderBoard();
+        }
+
+        function updateStageHeader() {
+            const stage = STAGES[currentStageIndex];
+            const isCleared = clearedStageIds.has(stage.id);
+
+            document.getElementById('stage-number-badge').innerText = `STAGE ${String(stage.id).padStart(2, '0')}`;
+            document.getElementById('stage-title-text').innerText = isCleared ? stage.title : '???';
+
+            const statusIndicator = document.getElementById('stage-status-indicator');
+            const statusText = document.getElementById('status-text');
+
+            if (isCleared) {
+                statusIndicator.className = 'flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full';
+                statusText.innerText = 'クリア済み';
+            } else {
+                statusIndicator.className = 'flex items-center gap-1.5 text-xs font-bold text-amber-500 bg-amber-50 px-3 py-1.5 rounded-full';
+                statusText.innerText = '挑戦中';
+            }
+        }
+
+        function saveProgress() {
+            const data = {
+                clearedStageIds: Array.from(clearedStageIds),
+                currentStageIndex: currentStageIndex
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        }
+
+        function loadProgress() {
+            const raw = localStorage.getItem(SAVE_KEY);
+            if (raw) {
+                try {
+                    const data = JSON.parse(raw);
+                    if (data.clearedStageIds) {
+                        clearedStageIds = new Set(data.clearedStageIds);
+                    }
+                    if (data.currentStageIndex !== undefined) {
+                        currentStageIndex = data.currentStageIndex;
+                    }
+                } catch (e) {
+                    console.error("Failed to load save data", e);
+                }
+            }
+        }
+
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.25; // gravity
+                    p.rotation += p.rSpeed;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rotation * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+
+                frame++;
+                if (frame < 120) {
+                    requestAnimationFrame(animate);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            animate();
+        }
+
+        window.onload = function() {
+            loadProgress();
+
+            // Tool Toggle Buttons
+            const fillBtn = document.getElementById('tool-fill');
+            const crossBtn = document.getElementById('tool-cross');
+
+            fillBtn.addEventListener('click', () => {
+                currentTool = 'fill';
+                fillBtn.className = 'py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm bg-indigo-600 text-white';
+                crossBtn.className = 'py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900';
+            });
+
+            crossBtn.addEventListener('click', () => {
+                currentTool = 'cross';
+                crossBtn.className = 'py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-sm bg-indigo-600 text-white';
+                fillBtn.className = 'py-2.5 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition text-slate-600 hover:text-slate-900';
+            });
+
+            // Action Buttons
+            document.getElementById('btn-reset').addEventListener('click', resetStage);
+            document.getElementById('btn-hint').addEventListener('click', giveHint);
+
+            // Stage Navigation Buttons
+            document.getElementById('btn-prev-stage').addEventListener('click', () => {
+                const nextIdx = (currentStageIndex - 1 + STAGES.length) % STAGES.length;
+                loadStage(nextIdx);
+            });
+            document.getElementById('btn-next-stage').addEventListener('click', () => {
+                const nextIdx = (currentStageIndex + 1) % STAGES.length;
+                loadStage(nextIdx);
+            });
+
+            // Modals Logic
+            document.getElementById('btn-gallery').addEventListener('click', openGalleryModal);
+            document.getElementById('btn-close-gallery').addEventListener('click', closeGalleryModal);
+
+            document.getElementById('btn-next-stage-modal').addEventListener('click', () => {
+                hideClearModal();
+                const nextIdx = (currentStageIndex + 1) % STAGES.length;
+                loadStage(nextIdx);
+            });
+
+            document.getElementById('btn-gallery-modal').addEventListener('click', () => {
+                hideClearModal();
+                openGalleryModal();
+            });
+
+            // Sound Toggle
+            const soundBtn = document.getElementById('btn-sound');
+            soundBtn.addEventListener('click', () => {
+                audio.isMuted = !audio.isMuted;
+                soundBtn.innerHTML = audio.isMuted 
+                    ? '<i class="fa-solid fa-volume-xmark text-lg text-red-500"></i>' 
+                    : '<i class="fa-solid fa-volume-high text-lg"></i>';
+            });
+
+            // Load initial board
+            loadStage(currentStageIndex);
+        };
+    </script>
+</body>
+</html>

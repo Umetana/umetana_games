@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff7df">
+  <title>ちいさなノノグラム</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main class="app" id="app">
+    <section class="screen title-screen active" id="title-screen" aria-labelledby="app-title">
+      <div class="hero-mark" aria-hidden="true">▦</div>
+      <p class="eyebrow">10×10 パズル</p>
+      <h1 id="app-title">ちいさな<br>ノノグラム</h1>
+      <p class="lead">マスをぬって、かくれた絵をみつけよう！</p>
+      <div class="stack actions">
+        <button class="primary big" id="start-button">はじめる</button>
+        <button class="secondary" id="continue-button" disabled>つづきから</button>
+        <button class="text-button sound-open">♪ おと設定</button>
+      </div>
+    </section>
+
+    <section class="screen" id="select-screen" aria-labelledby="select-title">
+      <header class="page-header">
+        <button class="icon-button" data-go="title" aria-label="タイトルへ戻る">‹</button>
+        <h2 id="select-title">もんだいをえらぶ</h2>
+        <button class="icon-button sound-open" aria-label="おと設定">♪</button>
+      </header>
+      <div class="puzzle-list" id="puzzle-list"></div>
+    </section>
+
+    <section class="screen game-screen" id="game-screen" aria-labelledby="game-name">
+      <header class="page-header game-header">
+        <button class="icon-button" id="back-to-list" aria-label="問題一覧へ戻る">‹</button>
+        <div><p class="stage-label" id="stage-label"></p><h2 id="game-name">？？？</h2></div>
+        <button class="icon-button sound-open" aria-label="おと設定">♪</button>
+      </header>
+      <div class="status-row"><span id="mistake-count">おっと！ 0かい</span><span id="save-status" aria-live="polite"></span></div>
+      <div class="board-wrap" id="board-wrap">
+        <div class="corner" aria-hidden="true"></div>
+        <div class="column-clues" id="column-clues"></div>
+        <div class="row-clues" id="row-clues"></div>
+        <div class="board" id="board" role="grid" aria-label="10かける10の盤面"></div>
+      </div>
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+      <div class="mode-group" aria-label="入力モード">
+        <button class="mode active" data-mode="fill"><span aria-hidden="true">■</span> ぬる</button>
+        <button class="mode" data-mode="cross"><span aria-hidden="true">×</span> ばつ</button>
+        <button class="mode" data-mode="erase"><span aria-hidden="true">○</span> けす</button>
+      </div>
+      <div class="tool-group">
+        <button id="undo-button">↶<span>ひとつもどす</span></button>
+        <button id="hint-button">💡<span>ヒント</span></button>
+        <button id="reset-button">↺<span>さいしょから</span></button>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
+    <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
+  </div>
+  <div class="start-overlay" id="start-overlay" hidden><strong id="start-text">いくよー！</strong></div>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script src="js/puzzles.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
