@@ -1,7 +1,7 @@
 (function(){
   "use strict";
   /* 素材完成後に相対パスを追加します。空文字は読み込みません。 */
-  var SOURCES={bgm:"",se:{input:"",line:"",mistake:"",clear:"",button:""},voice:{start:[],mistake:[],clear:[]}};
+  var SOURCES={bgm:"./assets/audio/bgm/nonogram001.mp3",se:{input:"",line:"",mistake:"",clear:"",button:""},voice:{start:["./assets/audio/voice/ikuyo.mp3"],mistake:["./assets/audio/voice/zannen.mp3"],clear:["./assets/audio/voice/clear.mp3"]}};
   var bgm=null,lastVoice="",lastMistakeVoiceAt=0;
   function enabled(kind){return SaveStore.get().sound[kind]!==false;}
   function playFile(path,volume,loop){
