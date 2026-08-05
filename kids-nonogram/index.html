@@ -6,6 +6,11 @@
   <meta name="theme-color" content="#fff7df">
   <title>ちいさなノノグラム</title>
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    .home-link{display:inline-block;margin-top:22px;padding:10px 14px;color:var(--muted);font-size:14px;font-weight:800;text-decoration:none;border-radius:12px}
+    .home-link:hover{color:var(--orange-dark);background:#fff7}
+    .home-link:focus-visible{outline:4px solid #2d79bd;outline-offset:3px}
+  </style>
 </head>
 <body>
   <main class="app" id="app">
@@ -19,6 +24,7 @@
         <button class="secondary" id="continue-button" disabled>つづきから</button>
         <button class="text-button sound-open">♪ おと設定</button>
       </div>
+      <a class="home-link" href="../index.html">← ゲーム一覧へ</a>
     </section>
 
     <section class="screen" id="select-screen" aria-labelledby="select-title">
