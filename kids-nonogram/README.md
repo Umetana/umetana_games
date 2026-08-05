@@ -39,8 +39,8 @@ http://localhost:8000/tools/puzzle-maker/
 
 素材は次のフォルダへ配置します。
 
-- BGM：`assets/audio/bgm/`
-- 効果音：`assets/audio/se/`
-- 音声：`assets/audio/voice/`
+- BGM：`assets/audio/bgm/` (現バージョンはSUNO AIで生成)
+- 効果音：`assets/audio/se/` (現バージョンはWeb Audio APIで合成)
+- 音声：`assets/audio/voice/` (現バージョンは自前録音・加工)
 
 `js/audio.js`先頭の`SOURCES`へ相対パスを設定すると反映されます。空文字または空配列の項目は読み込まれないため、素材がなくても404や再生エラーは発生しません。MP3形式を基本とします。
