@@ -48,7 +48,7 @@
     var now=GameRules.completed(current,board),newly=false;
     now.rows.forEach(function(done,i){rowClues.children[i].classList.toggle("done",done);if(previousComplete&&!previousComplete.rows[i]&&done)newly=true;});
     now.cols.forEach(function(done,i){columnClues.children[i].classList.toggle("done",done);if(previousComplete&&!previousComplete.cols[i]&&done)newly=true;});
-    if(withSound&&newly)GameAudio.se("line");previousComplete=now;return now;
+    if(withSound&&newly&&!now.all)GameAudio.se("line");previousComplete=now;return now;
   }
   function message(text){var el=$("#toast");el.textContent=text;clearTimeout(message.timer);message.timer=setTimeout(function(){el.textContent="";},800);}
   function applyCell(index,changes){
@@ -116,6 +116,7 @@
   $("#undo-button").addEventListener("click",function(){if(!history.length||locked)return;history.pop().forEach(function(change){board[change[0]]=change[1];paintCell(change[0]);});updateCompleted(false);save();updateStatus();});
   $("#hint-button").addEventListener("click",function(){if(locked)return;var choices=[];current.solution.forEach(function(row,r){row.split("").forEach(function(x,c){if(x==="1"&&board[r*10+c]===0)choices.push(r*10+c);});});if(!choices.length)return;var changes=[],oldMode=mode;mode="fill";applyCell(choices[Math.floor(Math.random()*choices.length)],changes);mode=oldMode;finishChanges(changes);});
   $("#reset-button").addEventListener("click",openReset);
+  document.addEventListener("click",function(e){var button=e.target.closest("button");if(button&&!button.disabled&&!button.classList.contains("cell"))GameAudio.se("button");});
   document.addEventListener("pointerdown",function(){GameAudio.startBgm();},{once:true});
   refreshContinue();updateStatus();
 })();
