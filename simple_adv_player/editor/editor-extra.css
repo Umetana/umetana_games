@@ -1,0 +1,12 @@
+.scene-tools { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px; }
+.scene-references { margin:10px 2px 0; color:#657386; font-size:.75rem; line-height:1.5; overflow-wrap:anywhere; }
+#work-select { min-height:40px; max-width:220px; padding:.45rem .6rem; border:1px solid #7890a8; border-radius:9px; background:#fff; color:#243142; }
+.server-offline { color:#ffd4a5; font-weight:700; }
+.wide-dialog { width:min(960px,96vw); }
+.script-import { display:grid; gap:14px; }
+.script-import textarea { min-height:280px; font-family:Consolas,"Yu Gothic UI",monospace; }
+.script-controls { display:grid; grid-template-columns:minmax(220px,1fr) auto auto; align-items:end; gap:10px; }
+.script-preview { min-height:180px; max-height:35vh; overflow:auto; margin:0; padding:14px; border-radius:10px; background:#172536; color:#eaf3fb; white-space:pre-wrap; }
+.script-errors { color:#a12e36; white-space:pre-line; }
+.script-errors:empty { display:none; }
+@media(max-width:680px) { .script-controls { grid-template-columns:1fr; } .script-import textarea { min-height:220px; } }

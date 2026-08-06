@@ -2,6 +2,7 @@
   "use strict";
 
   const idPattern = /^[A-Za-z][A-Za-z0-9_]*$/;
+  const gameIdPattern = /^[A-Za-z][A-Za-z0-9_-]*$/;
   const commandTypes = new Set(["background", "character", "characterHide", "message", "choice", "set", "add", "branch", "jump", "bgm", "bgmStop", "se", "event", "end"]);
   const slots = new Set(["left", "center", "right"]);
 
@@ -24,12 +25,18 @@
 
   function validate(data, registry) {
     const game = data;
-    assert(isObject(game) && game.formatVersion === 1, "FORMAT_VERSION");
-    assert(isObject(game.game) && idPattern.test(game.game.id) && Number.isInteger(game.game.revision) && game.game.revision >= 1 && typeof game.game.title === "string" && game.game.title, "INVALID_METADATA");
+    assert(isObject(game) && [1, 2].includes(game.formatVersion), "FORMAT_VERSION");
+    assert(isObject(game.game) && gameIdPattern.test(game.game.id) && Number.isInteger(game.game.revision) && game.game.revision >= 1 && typeof game.game.title === "string" && game.game.title, "INVALID_METADATA");
     assert(isObject(game.assets) && ["backgrounds", "characters", "enemies", "bgm", "se"].every((key) => isObject(game.assets[key])), "INVALID_ASSETS");
     Object.values(game.assets).forEach((group) => Object.entries(group).forEach(([id, path]) => assert(idPattern.test(id) && validPath(path), `INVALID_ASSET_PATH:${id}`)));
     assert(isObject(game.variables) && Object.values(game.variables).every((value) => typeof value === "boolean" || (typeof value === "number" && Number.isFinite(value))), "INVALID_VARIABLES");
     assert(isObject(game.scenes) && game.scenes[game.game.startScene], "INVALID_START_SCENE");
+    if (game.formatVersion === 2) {
+      assert(isObject(game.game.titleScreen), "MISSING_TITLE_SCREEN");
+      const title = game.game.titleScreen;
+      assert(typeof title.background === "string" && Boolean(game.assets.backgrounds[title.background]), "INVALID_TITLE_BACKGROUND");
+      assert(typeof title.newGameLabel === "string" && title.newGameLabel && typeof title.continueLabel === "string" && title.continueLabel, "INVALID_TITLE_LABELS");
+    }
 
     Object.entries(game.scenes).forEach(([sceneId, commands]) => {
       assert(idPattern.test(sceneId) && Array.isArray(commands) && commands.length > 0, `INVALID_SCENE:${sceneId}`);

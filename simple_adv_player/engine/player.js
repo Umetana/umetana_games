@@ -6,7 +6,8 @@
     app: el("app"), background: el("background"), stage: el("stage"), messageBox: el("message-box"),
     speaker: el("speaker"), message: el("message"), choices: el("choices"), eventLayer: el("event-layer"),
     endLayer: el("end-layer"), endMessage: el("end-message"), errorLayer: el("error-layer"),
-    errorMessage: el("error-message"), settings: el("settings-dialog"), notice: el("notice")
+    errorMessage: el("error-message"), settings: el("settings-dialog"), notice: el("notice"),
+    titleLayer: el("title-layer"), titleNewGame: el("title-new-game"), titleContinue: el("title-continue"), titleSettings: el("title-settings")
   };
   const slots = { left: el("slot-left"), center: el("slot-center"), right: el("slot-right") };
   const eventRegistry = window.SimpleAdvEventRegistry;
@@ -16,6 +17,7 @@
   let bgm = null;
   let settings = { bgm: true, se: true };
   let saveKey = "";
+  let savedState = null;
   let settingsKey = "simple-adv:settings";
 
   function fail(code, detail) {
@@ -43,16 +45,16 @@
 
   function loadJson(key) { try { const value = localStorage.getItem(key); return value ? JSON.parse(value) : null; } catch { return null; } }
   function save() {
-    try { localStorage.setItem(saveKey, JSON.stringify({ gameId: game.game.id, revision: game.game.revision, ...state })); }
+    try { localStorage.setItem(saveKey, JSON.stringify({ gameId: game.game.id, revision: game.game.revision, ...state })); savedState = structuredClone(state); }
     catch { warn("このたびは じどうセーブが できません。ゲームは そのまま あそべます。"); }
   }
   function loadSave() {
     const saved = loadJson(saveKey);
-    if (!saved) return initialState();
+    if (!saved) return null;
     const valid = saved.gameId === game.game.id && saved.revision === game.game.revision && game.scenes[saved.scene] && Number.isInteger(saved.index) && saved.index >= 0 && saved.index < game.scenes[saved.scene].length && isObject(saved.variables) && isObject(saved.display);
     if (!valid || Object.keys(game.variables).some((key) => typeof saved.variables[key] !== typeof game.variables[key])) {
       warn("まえの セーブは つかえないため、はじめから スタートします。");
-      return initialState();
+      return null;
     }
     return saved;
   }
@@ -200,18 +202,59 @@
   }
 
   function restart() {
-    if (!window.confirm("セーブを けして、はじめから あそびますか？")) return;
-    try { localStorage.removeItem(saveKey); } catch { /* Current session can still restart. */ }
-    stopBgm();
+    startNewGame(true);
+    if (ui.settings.open) ui.settings.close();
+  }
+
+  function clearPlayUi() {
+    hideWaitingUi();
+    ui.eventLayer.replaceChildren(); ui.eventLayer.classList.add("hidden");
+    ui.endLayer.classList.add("hidden"); ui.errorLayer.classList.add("hidden");
+    ui.background.style.backgroundImage = "none"; ui.background.classList.remove("missing");
+    Object.values(slots).forEach((slot) => { slot.replaceChildren(); slot.classList.remove("enemy"); });
+  }
+
+  function showTitle() {
+    if (!game.game.titleScreen) return;
+    if (bgm) { bgm.pause(); bgm = null; }
+    clearPlayUi();
+    if (ui.settings.open) ui.settings.close();
+    const title = game.game.titleScreen;
+    ui.titleLayer.style.backgroundImage = `url("${game.assets.backgrounds[title.background]}")`;
+    ui.titleNewGame.textContent = title.newGameLabel;
+    ui.titleContinue.textContent = title.continueLabel;
+    ui.titleContinue.disabled = !savedState;
+    ui.titleLayer.classList.remove("hidden");
+    busy = false;
+    (savedState ? ui.titleContinue : ui.titleNewGame).focus();
+  }
+
+  function startNewGame(confirmExisting = true) {
+    if (confirmExisting && savedState && !window.confirm("セーブを けして、はじめから あそびますか？")) return;
+    try { localStorage.removeItem(saveKey); } catch { /* Current session can still start. */ }
+    savedState = null;
+    if (bgm) { bgm.pause(); bgm = null; }
     state = initialState();
-    ui.settings.close(); ui.endLayer.classList.add("hidden"); ui.errorLayer.classList.add("hidden");
-    restoreDisplay(); busy = false; execute();
+    clearPlayUi(); ui.titleLayer.classList.add("hidden");
+    busy = false; execute();
+  }
+
+  function continueGame() {
+    if (!savedState) return;
+    state = structuredClone(savedState);
+    clearPlayUi(); ui.titleLayer.classList.add("hidden");
+    restoreDisplay(); busy = false;
+    if (state.ended) showEnd(game.scenes[state.scene][state.index].message || "おしまい"); else execute();
   }
 
   function bindUi() {
     ui.messageBox.addEventListener("click", advanceMessage);
     ui.messageBox.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); advanceMessage(); } });
     el("settings-button").addEventListener("click", (event) => { event.stopPropagation(); ui.settings.showModal(); });
+    ui.titleSettings.addEventListener("click", () => ui.settings.showModal());
+    ui.titleNewGame.addEventListener("click", () => startNewGame(true));
+    ui.titleContinue.addEventListener("click", continueGame);
+    el("return-title-button").addEventListener("click", () => showTitle());
     el("restart-button").addEventListener("click", restart);
     el("end-restart").addEventListener("click", restart);
     el("error-reload").addEventListener("click", () => location.reload());
@@ -234,10 +277,13 @@
       game = window.SimpleAdvValidator.validate(await response.json(), eventRegistry);
       document.title = game.game.title;
       saveKey = `simple-adv:save:${game.game.id}`;
-      state = loadSave();
-      restoreDisplay();
+      savedState = loadSave();
+      state = savedState ? structuredClone(savedState) : initialState();
       ui.app.setAttribute("aria-busy", "false");
-      if (state.ended) showEnd(game.scenes[state.scene][state.index].message || "おしまい"); else { busy = false; execute(); }
+      const hasTitle = game.formatVersion >= 2 && game.game.titleScreen;
+      el("return-title-button").classList.toggle("hidden", !hasTitle);
+      if (hasTitle) showTitle();
+      else { restoreDisplay(); if (state.ended) showEnd(game.scenes[state.scene][state.index].message || "おしまい"); else { busy = false; execute(); } }
     } catch (error) { fail("GAME_LOAD_ERROR", `作品データを よみこめませんでした。\n${error.message}`); }
   }
 

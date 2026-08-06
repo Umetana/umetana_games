@@ -1,7 +1,7 @@
 {
   "formatVersion": 2,
   "game": {
-    "id": "math_quest_vertical_slice_0",
+    "id": "math_quest_vertical_slice",
     "revision": 2,
     "title": "さんすうクエスト ～くく王のじゅなん～",
     "startScene": "opening",

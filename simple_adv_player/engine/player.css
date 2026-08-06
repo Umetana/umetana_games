@@ -39,6 +39,10 @@ dialog::backdrop { background:#07111dc9; }
 .settings-panel input { width:24px; height:24px; }
 .danger { background:#ffe0d8; }
 .notice { position:absolute; z-index:60; left:50%; bottom:16px; transform:translateX(-50%); width:min(92%,620px); padding:12px 18px; border-radius:12px; background:#331f12; border:2px solid #ffc16b; text-align:center; }
+.title-layer { position:absolute; z-index:35; inset:0; display:flex; align-items:flex-end; justify-content:center; padding:clamp(24px,7vh,70px); background:#173653 center/cover no-repeat; }
+.title-actions { width:min(360px,88vw); display:grid; gap:12px; padding:18px; border-radius:20px; background:rgba(8,25,43,.78); border:2px solid rgba(255,255,255,.75); box-shadow:0 12px 35px #0009; }
+.title-actions button { min-height:54px; font-size:clamp(1rem,3vw,1.3rem); }
+.title-actions .secondary-title { background:#dce9f4; border-color:#fff; }
 @media (max-height:560px) and (orientation:landscape) {
   .topbar { inset:6px 8px auto; }.logo{width:105px}.stage{inset:2% 2% 30%}.character-slot{height:100%}
   .message-box{left:18%;right:18%;bottom:6px;min-height:108px;padding:30px 30px 12px}.message{font-size:1rem;line-height:1.35}.speaker{top:-15px;padding:.25rem .8rem}

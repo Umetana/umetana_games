@@ -1,0 +1,8 @@
+/* 作品固有の色・装飾はここへ追加する。共通レイアウトは engine/player.css が担当する。 */
+:root {
+  --gold: #ffd966;
+  --ink: #10243b;
+  --panel: rgba(9, 27, 48, .92);
+}
+
+.background.missing::after { content: "おしろへの みち"; }
