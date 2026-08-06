@@ -3,7 +3,7 @@
   "game": {
     "id": "math_quest_vertical_slice_0",
     "revision": 2,
-    "title": "さんすうクエスト ～くく王のじゅなん～",
+    "title": "0さんすうクエスト ～くく王のじゅなん～",
     "startScene": "opening",
     "titleScreen": {
       "background": "title",
