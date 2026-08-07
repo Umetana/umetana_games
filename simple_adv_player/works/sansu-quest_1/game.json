@@ -18,7 +18,8 @@
       "demon_castle": "assets/backgrounds/demon_castle.png",
       "last_battle": "assets/backgrounds/last_battle.png",
       "title": "assets/logos/title.png",
-      "village": "assets/backgrounds/village.png"
+      "village": "assets/backgrounds/village.png",
+      "forest": "assets/backgrounds/forest.png"
     },
     "characters": {
       "yu_normal": "assets/characters/yu_normal.png",
@@ -49,6 +50,11 @@
   },
   "scenes": {
     "opening": [
+      {
+        "type": "message",
+        "speaker": "",
+        "text": "開発中 0808版"
+      },
       {
         "type": "background",
         "asset": "castle_road"
@@ -91,7 +97,7 @@
       },
       {
         "type": "character",
-        "slot": "right",
+        "slot": "center",
         "asset": "slime_two"
       },
       {
@@ -200,6 +206,10 @@
         "type": "character",
         "slot": "right",
         "asset": "elma_normal"
+      },
+      {
+        "type": "characterHide",
+        "slot": "center"
       },
       {
         "type": "message",
@@ -637,7 +647,280 @@
       },
       {
         "type": "jump",
+        "scene": "forest_encounter"
+      }
+    ],
+    "forest_encounter": [
+      {
+        "type": "background",
+        "asset": "forest"
+      },
+      {
+        "type": "character",
+        "slot": "left",
+        "asset": "yu_normal"
+      },
+      {
+        "type": "character",
+        "slot": "right",
+        "asset": "elma_normal"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "ここが\nはじまりの森かあ。"
+      },
+      {
+        "type": "message",
+        "speaker": "エルマ",
+        "text": "この森では、\n2のだんと 3のだんが\nみだれてるみたい。"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "さっきのスライムも\nいるのかな？"
+      },
+      {
+        "type": "character",
+        "slot": "right",
+        "asset": "slime_two"
+      },
+      {
+        "type": "message",
+        "speaker": "にのだんスライム",
+        "text": "ぷるる！"
+      },
+      {
+        "type": "character",
+        "slot": "center",
+        "asset": "goblin_3_4"
+      },
+      {
+        "type": "message",
+        "speaker": "さんしゴブリン",
+        "text": "へっへっへ！\nここから先は\nとおさないぞ！"
+      },
+      {
+        "type": "character",
+        "slot": "left",
+        "asset": "yu_surprised"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "でた！"
+      },
+      {
+        "type": "message",
+        "speaker": "エルマ",
+        "text": "ユウ、\nさっきと おなじだよ。"
+      },
+      {
+        "type": "message",
+        "speaker": "エルマ",
+        "text": "正しいこたえを\nえらんで、\n九九の力を もとにもどそう！"
+      },
+      {
+        "type": "choice",
+        "options": [
+          {
+            "text": "こたえる",
+            "scene": "forest_battle"
+          },
+          {
+            "text": "にげる",
+            "scene": "forest_escape_joke"
+          }
+        ]
+      }
+    ],
+    "forest_escape_joke": [
+      {
+        "type": "background",
+        "asset": "forest"
+      },
+      {
+        "type": "character",
+        "slot": "left",
+        "asset": "yu_surprised"
+      },
+      {
+        "type": "character",
+        "slot": "right",
+        "asset": "elma_normal"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "にげる！"
+      },
+      {
+        "type": "message",
+        "speaker": "エルマ",
+        "text": "しかし！"
+      },
+      {
+        "type": "message",
+        "speaker": "エルマ",
+        "text": "しゅくだいからは\nにげられない！"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "ええーっ！？"
+      },
+      {
+        "type": "message",
+        "speaker": "エルマ",
+        "text": "だいじょうぶ。\nわたしも いっしょだよ。"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "……それなら\nやる！"
+      },
+      {
+        "type": "jump",
+        "scene": "forest_battle"
+      }
+    ],
+    "forest_battle": [
+      {
+        "type": "characterHide",
+        "slot": "right"
+      },
+      {
+        "type": "character",
+        "slot": "center",
+        "asset": "slime_two"
+      },
+      {
+        "type": "message",
+        "speaker": "にのだんスライム",
+        "text": "ぷるる！"
+      },
+      {
+        "type": "event",
+        "event": "multiplicationQuiz",
+        "args": {
+          "rows": [
+            2
+          ],
+          "questionCount": 2,
+          "requiredCorrect": 1,
+          "presentation": {
+            "allyCutin": "elma_bow",
+            "enemy": "slime_two"
+          }
+        },
+        "result": {
+          "correct": "last_quiz_correct",
+          "wrong": "last_quiz_wrong",
+          "cleared": "last_quiz_cleared"
+        }
+      },
+      {
+        "type": "branch",
+        "condition": {
+          "variable": "last_quiz_cleared",
+          "operator": "==",
+          "value": true
+        },
+        "then": "forest_battle_second",
+        "else": "forest_retry"
+      }
+    ],
+    "forest_battle_second": [
+      {
+        "type": "characterHide",
+        "slot": "right"
+      },
+      {
+        "type": "character",
+        "slot": "center",
+        "asset": "goblin_3_4"
+      },
+      {
+        "type": "message",
+        "speaker": "さんしゴブリン",
+        "text": "つぎはおれさまだ！"
+      },
+      {
+        "type": "event",
+        "event": "multiplicationQuiz",
+        "args": {
+          "rows": [
+            3
+          ],
+          "questionCount": 4,
+          "requiredCorrect": 3,
+          "presentation": {
+            "allyCutin": "elma_bow",
+            "enemy": "goblin_3_4"
+          }
+        },
+        "result": {
+          "correct": "last_quiz_correct",
+          "wrong": "last_quiz_wrong",
+          "cleared": "last_quiz_cleared"
+        }
+      },
+      {
+        "type": "branch",
+        "condition": {
+          "variable": "last_quiz_cleared",
+          "operator": "==",
+          "value": true
+        },
+        "then": "forest_clear",
+        "else": "forest_retry_second"
+      }
+    ],
+    "forest_clear": [
+      {
+        "type": "characterHide",
+        "slot": "center"
+      },
+      {
+        "type": "message",
+        "speaker": "",
+        "text": "勝った"
+      },
+      {
+        "type": "jump",
         "scene": "sample_end"
+      }
+    ],
+    "forest_retry": [
+      {
+        "type": "character",
+        "slot": "center",
+        "asset": "slime_two"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "もういちど！"
+      },
+      {
+        "type": "jump",
+        "scene": "forest_battle"
+      }
+    ],
+    "forest_retry_second": [
+      {
+        "type": "character",
+        "slot": "center",
+        "asset": "goblin_3_4"
+      },
+      {
+        "type": "message",
+        "speaker": "ユウ",
+        "text": "まだまだ！"
+      },
+      {
+        "type": "jump",
+        "scene": "forest_battle_second"
       }
     ],
     "sample_end": [
