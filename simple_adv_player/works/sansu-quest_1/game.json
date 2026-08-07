@@ -4,7 +4,7 @@
     "id": "math_quest_vertical_slice",
     "revision": 2,
     "title": "さんすうクエスト ～くく王のじゅなん～",
-    "startScene": "opening",
+    "startScene": "title",
     "titleScreen": {
       "background": "title",
       "newGameLabel": "はじめから",
@@ -40,7 +40,12 @@
       "demon_drill": "assets/enemies/demon_drill.png",
       "demon_last": "assets/enemies/demon_last.png"
     },
-    "bgm": {},
+    "bgm": {
+      "title": "assets/bgm/title.mp3",
+      "field": "assets/bgm/field.mp3",
+      "castle": "assets/bgm/castle.mp3",
+      "village": "assets/bgm/village.mp3"
+    },
     "se": {}
   },
   "variables": {
@@ -49,11 +54,34 @@
     "last_quiz_cleared": false
   },
   "scenes": {
-    "opening": [
+    "title": [
+      {
+        "type": "bgm",
+        "asset": "title"
+      },
+      {
+        "type": "background",
+        "asset": "title"
+      },
       {
         "type": "message",
         "speaker": "",
         "text": "開発中 0808版"
+      },
+      {
+        "type": "message",
+        "speaker": "",
+        "text": "第二章 ゴブリン戦まで"
+      },
+      {
+        "type": "jump",
+        "scene": "opening"
+      }
+    ],
+    "opening": [
+      {
+        "type": "bgm",
+        "asset": "field"
       },
       {
         "type": "background",
@@ -323,6 +351,10 @@
     ],
     "castle_request": [
       {
+        "type": "bgm",
+        "asset": "castle"
+      },
+      {
         "type": "background",
         "asset": "castle"
       },
@@ -533,6 +565,10 @@
     ],
     "village_interlude": [
       {
+        "type": "bgm",
+        "asset": "field"
+      },
+      {
         "type": "background",
         "asset": "castle_road"
       },
@@ -549,7 +585,7 @@
       {
         "type": "message",
         "speaker": "",
-        "text": "王城を出たユウとエルマは、\n森へつづく村を歩いていた。"
+        "text": "王城を出たユウとエルマは、\n森へつづく村にむかって歩いていた。"
       },
       {
         "type": "message",
@@ -564,10 +600,14 @@
       {
         "type": "message",
         "speaker": "エルマ",
-        "text": "まずは\nこの先の森へ いこう。"
+        "text": "まずは\nこの先の村へ いこう。"
       },
       {
         "type": "background",
+        "asset": "village"
+      },
+      {
+        "type": "bgm",
         "asset": "village"
       },
       {

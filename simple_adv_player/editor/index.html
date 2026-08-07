@@ -26,10 +26,14 @@
 
   <main class="workspace">
     <aside class="sidebar panel">
-      <div class="panel-heading"><h2>シーン</h2><button id="add-scene" class="small" type="button">＋ 追加</button></div>
-      <div class="scene-tools"><button id="move-scene-up" class="small secondary" type="button">↑ 上へ</button><button id="move-scene-down" class="small secondary" type="button">↓ 下へ</button><button id="rename-scene" class="small secondary" type="button">名前変更</button><button id="delete-scene" class="small danger" type="button">削除</button></div>
-      <p id="scene-references" class="scene-references">参照元：—</p>
+      <div class="scene-controls">
+        <div class="panel-heading"><h2>シーン</h2><button id="add-scene" class="small" type="button">＋ 追加</button></div>
+        <div class="scene-tools"><button id="move-scene-up" class="small secondary" type="button">↑ 上へ</button><button id="move-scene-down" class="small secondary" type="button">↓ 下へ</button><button id="rename-scene" class="small secondary" type="button">名前変更</button><button id="delete-scene" class="small danger" type="button">削除</button></div>
+        <label class="scene-search"><span>シーン検索</span><input id="scene-search" type="search" placeholder="IDで絞り込み" autocomplete="off"></label>
+        <p id="scene-references" class="scene-references">参照元：—</p>
+      </div>
       <nav id="scene-list" class="scene-list" aria-label="シーン一覧"></nav>
+      <div class="scene-list-footer"><span id="scene-visible-count"></span><button id="add-scene-bottom" class="small" type="button">＋ 選択シーンの直後へ追加</button></div>
     </aside>
 
     <section class="commands panel">
