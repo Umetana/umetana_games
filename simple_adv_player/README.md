@@ -22,7 +22,7 @@ simple_adv_player/
 制作環境にはNode.jsを使用します。制作サーバーを起動すると、エディター、作品プレビュー、直接保存、バックアップ、公開物生成を利用できます。
 
 ```powershell
-cd [ご自身の環境のよります]\simple_adv_player
+cd [ご自身の環境によります]\simple_adv_player
 node tools\dev-server.mjs
 ```
 
