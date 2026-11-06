@@ -1,4 +1,4 @@
-/* comment-material-v0.1.md のうち、★の付いていないカード。 */
+/* comment-material-v0.1.md のカード。★付きは昇格後に出現。 */
 (function(root){
   'use strict';
   const types={
@@ -44,8 +44,26 @@
   const comments=Object.entries(lines).flatMap(([type,entries]) =>
     entries.map(([number,text]) => ({id:`draft-${type}-${number}`,type,text,hp:1}))
   );
+  const starComments=[
+    ['pass','06','まばたきの間隔まで好き'],
+    ['pass','07','その回復薬、来世まで取っとく？'],
+    ['delete','03','選曲ダサすぎ、次はマシなの頼む'],
+    ['delete','05','腹の音した？切り抜いて笑お'],
+    ['delete','08','初見さん、入会金三万払ってね'],
+    ['timeout','02','回復しろって、これで十回目な'],
+    ['ban','05','見つけた勤務先に電話しとくね'],
+    ['ban','07','反論した奴の本名、晒していい？']
+  ].map(([type,number,text]) => ({id:`draft-${type}-${number}`,type,text,hp:1}));
+  const baseRanks=[
+    {requiredGain:0,starChance:0,spawnInterval:1.3},
+    {requiredGain:400,starChance:.10,spawnInterval:1.3},
+    {requiredGain:850,starChance:.18,spawnInterval:1.3},
+    {requiredGain:1350,starChance:.18,spawnInterval:1.2},
+    {requiredGain:1900,starChance:.25,spawnInterval:1.2}
+  ];
+  const ranksByMode={easy:baseRanks,normal:baseRanks,hard:baseRanks};
   const config=Object.freeze({duration:60,initialSubscribers:1000,targetGain:240,initialTension:100,flightTime:5,spawnInterval:1.3,maxCards:4,correctReward:12,passReward:8,wrongPenalty:10,friendlyPenalty:20,missPenalty:8,missDamage:12});
-  const data={types,comments,config};
+  const data={types,comments,starComments,ranksByMode,config};
   root.KBData=data;
   if(typeof module!=='undefined'&&module.exports)module.exports=data;
 })(globalThis);

@@ -2,7 +2,7 @@
   'use strict';
   const data=typeof module!=='undefined'&&module.exports?require('./data.js'):root.KBData;
   class Game{
-    constructor({config={},random=Math.random}={}){this.config={...data.config,...config};this.random=random;this.reset();}
+    constructor({config={},random=Math.random}={}){this.config={...data.config,holdTime:0,starChance:0,...config};this.random=random;this.reset();}
     reset(){this.status='ready';this.time=0;this.subscribers=this.config.initialSubscribers;this.tension=this.config.initialTension;this.weapon='delete';this.cards=[];this.events=[];this.combo=0;this.maxCombo=0;this.nextSpawn=.7;this.serial=0;this.stats={correct:0,passed:0,wrong:0,friendly:0,missed:0,shots:0};this.result=null;}
     start(){this.reset();this.status='playing';}
     pause(){if(this.status==='playing')this.status='paused';}
@@ -15,7 +15,8 @@
       const initial=['pass','delete','timeout','ban'];
       const roll=this.random();
       const type=initial[this.serial]|| (roll<.30?'pass':roll<.54?'delete':roll<.78?'timeout':'ban');
-      const pool=data.comments.filter(c=>c.type===type);
+      const useStar=this.serial>=initial.length&&this.config.starChance>0&&this.random()<this.config.starChance;
+      const pool=(useStar?data.starComments:data.comments).filter(c=>c.type===type);
       const source=pool[Math.min(pool.length-1,Math.floor(this.random()*pool.length))];
       const lane=this.serial%4;
       const x=[.17,.73,.37,.82][lane]+(this.random()-.5)*.05;
@@ -24,12 +25,13 @@
     update(dt){
       if(this.status!=='playing'||!Number.isFinite(dt)||dt<=0)return;
       // 大きな時間差でも出現・着弾を順序通りに計算する。
+      const arrivalTime=this.config.holdTime+this.config.flightTime;
       let remaining=Math.min(dt,this.config.duration-this.time);
       while(remaining>1e-8&&this.status==='playing'){
         const step=Math.min(remaining,1/60);remaining-=step;this.time=Math.min(this.config.duration,this.time+step);
         for(const card of [...this.cards]){
           card.age+=step;
-          if(card.age>=this.config.flightTime){
+          if(card.age>=arrivalTime){
             this.cards=this.cards.filter(c=>c.uid!==card.uid);
             if(card.type==='pass'){this.stats.passed++;this.subscribers+=this.config.passReward;this.advanceCombo();this.emit('pass',card,this.config.passReward);}
             else{this.stats.missed++;this.subscribers=Math.max(0,this.subscribers-this.config.missPenalty);this.tension=Math.max(0,this.tension-this.config.missDamage);this.combo=0;this.emit('miss',card,-this.config.missPenalty);}
@@ -37,7 +39,7 @@
           }
         }
         if(this.status!=='playing')break;
-        if(this.time>=this.nextSpawn&&this.time<this.config.duration-this.config.flightTime){
+        if(this.time>=this.nextSpawn&&this.time<this.config.duration-arrivalTime){
           if(this.cards.length<this.config.maxCards)this.spawn();
           this.nextSpawn=this.time+this.config.spawnInterval;
         }
@@ -56,14 +58,14 @@
     finish(reason){if(this.status!=='playing')return;const gain=this.subscribers-this.config.initialSubscribers;this.status='finished';this.result={success:reason==='time'&&this.tension>0&&gain>=this.config.targetGain,reason,gain};this.emit('finish');}
     drainEvents(){return this.events.splice(0);}
   }
-  function cardRect(card,flightTime,width=1200,height=720){
-    const p=Math.min(1,Math.max(0,card.age/flightTime));
+  function cardRect(card,flightTime,width=1200,height=720,holdTime=0){
+    const p=Math.min(1,Math.max(0,(card.age-holdTime)/flightTime));
     const scale=1-.79*p;
     return {x:(card.originX*(1-p)+.5*p)*width,y:(card.originY*(1-p)+.32*p)*height,w:300*scale*width/1200,h:83*scale*height/720,scale,p};
   }
-  function hitTest(cards,x,y,flightTime,width=1200,height=720){
+  function hitTest(cards,x,y,flightTime,width=1200,height=720,holdTime=0){
     // 描画順と逆に検査し、手前のカードを優先。
-    return [...cards].sort((a,b)=>a.age-b.age).find(card=>{const r=cardRect(card,flightTime,width,height);return Math.abs(x-r.x)<=r.w/2&&Math.abs(y-r.y)<=r.h/2;});
+    return [...cards].sort((a,b)=>a.age-b.age).find(card=>{const r=cardRect(card,flightTime,width,height,holdTime);return Math.abs(x-r.x)<=r.w/2&&Math.abs(y-r.y)<=r.h/2;});
   }
   const api={Game,cardRect,hitTest};root.KBCore=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;

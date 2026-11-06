@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const {Game,cardRect,hitTest}=KBCore;
-  const {types,comments}=KBData;
+  const {types,comments,ranksByMode}=KBData;
   const game=new Game();
   const $=id=>document.getElementById(id);
   const canvas=$('game'),ctx=canvas.getContext('2d');
@@ -9,6 +9,68 @@
   let previous=0,visualTime=0,effects=[],pointer={x:600,y:500,inside:false},lastStatus='ready',audio=null,sound=false,shake=0;
   const reducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const weaponNames={delete:'DELETE',timeout:'TIMEOUT',ban:'BAN'};
+  const weaponHints={
+    delete:['青いカードを迎撃','宣伝・ネタバレ・単発の侮辱'],
+    timeout:['黄色いカードを迎撃','連投・しつこい強要'],
+    ban:['赤いカードを迎撃','脅し・晒し・現実での接触']
+  };
+  let difficulty='easy';
+  let selectedDifficulty='easy';
+  let roundRank=1;
+  let roundCarryover=0;
+  const progressKey=mode=>`kishokome-battle.${mode}-gain`;
+  const gainsByMode={easy:0,normal:0,hard:0};
+  for(const mode of Object.keys(gainsByMode)){
+    try {
+      const saved=Number(window.localStorage.getItem(progressKey(mode)));
+      if(Number.isSafeInteger(saved)&&saved>=0)gainsByMode[mode]=saved;
+    } catch {
+      // 保存できないブラウザでも、このタブ内では進行を維持する。
+    }
+  }
+
+  function currentRank(mode){
+    return ranksByMode[mode].filter(rank=>gainsByMode[mode]>=rank.requiredGain).length;
+  }
+
+  function showRankProgress(){
+    const progress=$('rank-progress');
+    progress.hidden=game.status==='paused';
+    const mode=selectedDifficulty;
+    const gain=gainsByMode[mode];
+    const ranks=ranksByMode[mode];
+    const rank=currentRank(mode);
+    const next=ranks[rank];
+    const goal=next?`次のランクまであと${(next.requiredGain-gain).toLocaleString('ja-JP')}人`:'最高ランク';
+    const nextRound=game.status==='finished'?'次の配信 · ':'';
+    progress.textContent=`${nextRound}${mode.toUpperCase()} ランク ${rank} / ${ranks.length} · 累計 +${gain.toLocaleString('ja-JP')}人 · ${goal}`;
+  }
+
+  function updateDifficulty(){
+    difficulty=selectedDifficulty;
+    const easy=difficulty==='easy';
+    const normal=difficulty==='normal';
+    roundCarryover=gainsByMode[difficulty];
+    roundRank=currentRank(difficulty);
+    const rank=ranksByMode[difficulty][roundRank-1];
+    game.config.holdTime=normal?1:0;
+    game.config.starChance=rank.starChance;
+    game.config.spawnInterval=rank.spawnInterval;
+    document.querySelectorAll('[data-weapon]').forEach(button=>{
+      button.querySelector('p').textContent=weaponHints[button.dataset.weapon][easy?0:1];
+    });
+    $('pass-hint').textContent=easy?'緑は、そのまま。':'感想や冗談は見送り。';
+    if(game.status==='ready'){
+      $('intro-tags').hidden=!easy;
+      const instructions={
+        easy:'色とラベルを見て武器を選ぼう。緑のコメントは撃たずに届けよう。',
+        normal:'出現したカードは1秒静止します。動き始めると枠にヒントの色が出ます。',
+        hard:'コメントを読んで対応を判断。配信者に近づくと枠にヒントの色が出ます。'
+      };
+      $('overlay-copy').textContent=instructions[difficulty];
+    }
+    showRankProgress();
+  }
   function rounded(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.stroke();}}
   function text(value,x,y,size=14,color='#b7c5db',align='left',font='sans-serif'){ctx.fillStyle=color;ctx.font=`${size}px ${font}`;ctx.textAlign=align;ctx.fillText(value,x,y);}
   function beep(kind){
@@ -25,7 +87,7 @@
   }
   function updateHud(){
     const gain=game.subscribers-game.config.initialSubscribers;
-    $('subscribers').textContent=game.subscribers.toLocaleString('ja-JP');
+    $('subscribers').textContent=(roundCarryover+game.subscribers).toLocaleString('ja-JP');
     $('delta').textContent=`${gain>=0?'+':''}${gain}`;
     $('delta').style.color=gain<0?types.ban.color:types.pass.color;
     $('goal-bar').style.width=`${Math.max(0,Math.min(100,gain/game.config.targetGain*100))}%`;
@@ -36,9 +98,10 @@
     const time=Math.max(0,game.config.duration-game.time).toFixed(1).split('.');
     $('timer').replaceChildren(document.createTextNode(time[0]),Object.assign(document.createElement('span'),{textContent:`.${time[1]}`}));
     $('timer').style.color=game.config.duration-game.time<=10?types.ban.color:'';
-    $('combo').textContent=`COMBO ${String(game.combo).padStart(2,'0')}`;
+    $('combo').textContent=`RANK ${roundRank} / COMBO ${String(game.combo).padStart(2,'0')}`;
     $('live-label').textContent=game.status==='playing'?'LIVE':game.status==='paused'?'PAUSED':game.status==='finished'?'OFF AIR':'STANDBY';
     $('pause').disabled=!['playing','paused'].includes(game.status);
+    $('settings').disabled=game.status==='playing'||game.status==='paused';
     $('pause').textContent=game.status==='paused'?'再開 Esc':'一時停止 Esc';
     $('weapon-caption').textContent=`装備中：${weaponNames[game.weapon]}`;
     $('weapon-caption').style.color=types[game.weapon].color;
@@ -47,6 +110,8 @@
   function showOverlay(mode){
     $('overlay').hidden=false;
     const paused=mode==='paused';
+    $('difficulty-picker').hidden=paused;
+    showRankProgress();
     $('intro-tags').hidden=true;
     $('restart').hidden=!paused;
     $('result-stats').hidden=paused;
@@ -60,17 +125,20 @@
       const {success,reason,gain}=game.result;
       $('overlay-kicker').textContent=success?'MISSION COMPLETE':'STREAM ENDED';
       $('overlay-title').textContent=success?'配信、大成功！':reason==='tension'?'テンションが限界…':'目標まで、あと少し！';
-      $('overlay-copy').textContent=`登録者 ${game.subscribers.toLocaleString('ja-JP')}人（${gain>=0?'+':''}${gain}人） / 目標 +${game.config.targetGain}人`;
+      const subscribers=(roundCarryover+game.subscribers).toLocaleString('ja-JP');
+      const roundGain=`${gain>=0?'+':''}${gain}人`;
+      const carryoverNote=success?`累計に ${roundGain} 加算`:'累計への加算なし';
+      $('overlay-copy').textContent=`登録者 ${subscribers}人 / 今回 ${roundGain} / 目標 +${game.config.targetGain}人 / ${carryoverNote}`;
       const entries=[['正しい迎撃',game.stats.correct],['見送り成功',game.stats.passed],['誤対応',game.stats.wrong+game.stats.friendly],['見逃し',game.stats.missed]];
       $('result-stats').replaceChildren(...entries.map(([label,value])=>{const div=document.createElement('div'),strong=document.createElement('strong'),span=document.createElement('span');strong.textContent=value;span.textContent=label;div.append(strong,span);return div;}));
-      $('start').textContent='もう一度プレイ →';
-      $('overlay-foot').textContent=`最大コンボ ${game.maxCombo} / テンション ${game.tension}% / 緑は見送り、青・黄・赤は武器を合わせよう`;
+      $('start').textContent='次の配信へ →';
+      $('overlay-foot').textContent=`${difficulty.toUpperCase()} ランク ${roundRank} / 最大コンボ ${game.maxCombo} / テンション ${game.tension}%`;
       $('announcement').textContent=`${$('overlay-title').textContent} ${$('overlay-copy').textContent}`;
     }
     $('start').focus({preventScroll:true});
   }
   function start(){
-    if(game.status==='paused')game.resume();else{game.start();effects=[];shake=0;}
+    if(game.status==='paused')game.resume();else{updateDifficulty();game.start();effects=[];shake=0;}
     $('overlay').hidden=true;pointer.inside=false;previous=performance.now();updateHud();canvas.focus({preventScroll:true});
   }
   function togglePause(){
@@ -80,9 +148,20 @@
   }
   function consumeEvents(){
     for(const event of game.drainEvents()){
-      if(event.kind==='finish'){showOverlay('finished');continue;}
+      if(event.kind==='finish'){
+        if(game.result.success){
+          gainsByMode[difficulty]=Math.min(Number.MAX_SAFE_INTEGER,gainsByMode[difficulty]+game.result.gain);
+          try {
+            window.localStorage.setItem(progressKey(difficulty),String(gainsByMode[difficulty]));
+          } catch {
+            // 保存不可の場合も現在の進行は保持する。
+          }
+        }
+        showOverlay('finished');
+        continue;
+      }
       if(event.kind==='empty')continue;
-      const r=cardRect(event.card,game.config.flightTime,W,H);
+      const r=cardRect(event.card,game.config.flightTime,W,H,game.config.holdTime);
       const bad=['wrong','friendly','miss'].includes(event.kind);
       const labels={correct:'NICE!',pass:'THANK YOU!',wrong:'武器が違う！',friendly:'誤射！ 見送り対象',miss:'コメント到達！'};
       effects.push({x:event.kind==='miss'||event.kind==='pass'?600:r.x,y:event.kind==='miss'||event.kind==='pass'?185:r.y,age:0,color:bad?types.ban.color:types[event.card.type].color,label:labels[event.kind],amount:event.amount});
@@ -132,16 +211,27 @@
     ctx.restore();
   }
   function drawCard(card){
-    const r=cardRect(card,game.config.flightTime,W,H),type=types[card.type];
+    const r=cardRect(card,game.config.flightTime,W,H,game.config.holdTime);
+    const type=types[card.type];
+    const easy=difficulty==='easy';
+    const accent=easy?type.color:'#aebed2';
+    // 出現1秒後から色を出す。NORMALでは静止が終わるタイミングと同じ。
+    const hintOpacity=easy?0:Math.max(0,Math.min(1,(card.age-1)/(game.config.flightTime-3)));
     ctx.save();ctx.translate(r.x,r.y);ctx.scale(r.scale,r.scale);
     ctx.shadowColor='#0007';ctx.shadowBlur=20;ctx.shadowOffsetY=8;
-    rounded(-150,-41.5,300,83,9,'#162434',type.color);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
-    ctx.globalAlpha=.12;rounded(-150,-41.5,300,83,9,type.color);ctx.globalAlpha=1;
-    rounded(-150,-41.5,4,83,2,type.color);
-    text(type.label,-134,-16,12,type.color,'left','Consolas, sans-serif');
+    rounded(-150,-41.5,300,83,9,'#162434',accent);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+    ctx.globalAlpha=.12;rounded(-150,-41.5,300,83,9,accent);ctx.globalAlpha=1;
+    rounded(-150,-41.5,4,83,2,accent);
+    if(hintOpacity>0){
+      ctx.globalAlpha=hintOpacity;
+      rounded(-150,-41.5,300,83,9,null,type.color);
+      rounded(-150,-41.5,4,83,2,type.color);
+      ctx.globalAlpha=1;
+    }
+    if(easy)text(type.label,-134,-16,12,accent,'left','Consolas, sans-serif');
     text('VIEWER',133,-16,10,'#95a7bd','right','Consolas');
     text(card.text,-134,15,16,'#f0f4fc');
-    ctx.globalAlpha=.5;rounded(-134,29,267,2,1,'#758399');ctx.globalAlpha=1;rounded(-134,29,267*(1-r.p),2,1,type.color);
+    ctx.globalAlpha=.5;rounded(-134,29,267,2,1,'#758399');ctx.globalAlpha=1;rounded(-134,29,267*(1-r.p),2,1,accent);
     ctx.restore();
   }
   function drawEffects(dt){
@@ -178,11 +268,12 @@
   canvas.addEventListener('pointerdown',event=>{
     if(event.button!==0||game.status!=='playing')return;
     event.preventDefault();canvas.focus({preventScroll:true});locate(event);
-    const card=hitTest(game.cards,pointer.x,pointer.y,game.config.flightTime,W,H);
+    const card=hitTest(game.cards,pointer.x,pointer.y,game.config.flightTime,W,H,game.config.holdTime);
     game.shoot(card?.uid);consumeEvents();updateHud();
   });
   document.querySelectorAll('[data-weapon]').forEach(button=>button.addEventListener('click',()=>{game.selectWeapon(button.dataset.weapon);updateHud();}));
   document.addEventListener('keydown',event=>{
+    if($('settings-dialog').open)return;
     if(event.altKey||event.ctrlKey||event.metaKey||/INPUT|TEXTAREA|SELECT/.test(event.target.tagName)||event.target.isContentEditable)return;
     if(['1','2','3'].includes(event.key)&&!event.repeat){game.selectWeapon(['delete','timeout','ban'][Number(event.key)-1]);updateHud();}
     if(event.key==='Escape'&&!event.repeat){event.preventDefault();togglePause();}
@@ -190,8 +281,69 @@
   window.addEventListener('blur',()=>{if(game.status==='playing')togglePause();});
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.status==='playing')togglePause();});
   $('pause').addEventListener('click',togglePause);
+  const settingsDialog=$('settings-dialog');
+  const resetRequest=$('request-reset');
+  const resetConfirmation=$('reset-confirmation');
+  const resetStatus=$('reset-status');
+
+  function hideResetConfirmation(){
+    resetConfirmation.hidden=true;
+    resetRequest.hidden=false;
+  }
+
+  $('settings').addEventListener('click',()=>{
+    if(game.status!=='ready'&&game.status!=='finished')return;
+    hideResetConfirmation();
+    resetStatus.textContent='';
+    settingsDialog.showModal();
+  });
+  resetRequest.addEventListener('click',()=>{
+    resetStatus.textContent='';
+    resetRequest.hidden=true;
+    resetConfirmation.hidden=false;
+    $('cancel-reset').focus();
+  });
+  $('cancel-reset').addEventListener('click',()=>{
+    hideResetConfirmation();
+    resetRequest.focus();
+  });
+  $('confirm-reset').addEventListener('click',()=>{
+    if(!settingsDialog.open||resetConfirmation.hidden)return;
+    let savedCleared=true;
+    for(const mode of Object.keys(gainsByMode)){
+      gainsByMode[mode]=0;
+      try {
+        window.localStorage.removeItem(progressKey(mode));
+      } catch {
+        savedCleared=false;
+      }
+    }
+    if(game.status==='ready'){
+      updateDifficulty();
+      updateHud();
+    }else showRankProgress();
+    hideResetConfirmation();
+    resetStatus.textContent=savedCleared
+      ? '全モードの戦績をクリアしました。'
+      : 'このタブの戦績をクリアしました。保存済みの戦績は消去できませんでした。';
+    settingsDialog.querySelector('form button').focus();
+  });
+  const modeButtons=document.querySelectorAll('[data-mode]');
+  for(const button of modeButtons){
+    button.addEventListener('click',()=>{
+      if(game.status!=='ready'&&game.status!=='finished')return;
+      selectedDifficulty=button.dataset.mode;
+      for(const option of modeButtons){
+        option.setAttribute('aria-pressed',String(option===button));
+      }
+      if(game.status==='ready'){
+        updateDifficulty();
+        updateHud();
+      }else showRankProgress();
+    });
+  }
   $('start').addEventListener('click',start);
   $('restart').addEventListener('click',()=>{game.start();effects=[];shake=0;$('overlay').hidden=true;previous=performance.now();canvas.focus({preventScroll:true});updateHud();});
   $('sound').addEventListener('click',()=>{sound=!sound;$('sound').textContent=`効果音 ${sound?'ON':'OFF'}`;$('sound').setAttribute('aria-pressed',String(sound));if(sound)beep('correct');});
-  updateHud();requestAnimationFrame(frame);
+  updateDifficulty();updateHud();requestAnimationFrame(frame);
 })();

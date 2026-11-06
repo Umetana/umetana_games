@@ -14,7 +14,7 @@
   <main class="app">
     <header class="masthead">
       <div class="brand"><span class="brand-icon">K!</span><div><p class="eyebrow">COMMENT DEFENSE / PROTOTYPE 01</p><h1>激闘！キショコメバトル<span>迎撃戦</span></h1></div></div>
-      <div class="header-actions"><span class="version">LOCAL / v0.1.0</span><button id="sound" class="icon-button" aria-pressed="false">効果音 OFF</button><button id="pause" class="icon-button" disabled>一時停止 <kbd>Esc</kbd></button></div>
+      <div class="header-actions"><span class="version">v0.2.0</span><button id="sound" class="icon-button" aria-pressed="false">効果音 OFF</button><button id="pause" class="icon-button" disabled>一時停止 <kbd>Esc</kbd></button><button id="settings" class="icon-button settings-button" type="button" aria-label="設定" aria-haspopup="dialog" title="設定">⚙</button></div>
     </header>
 
     <section class="dashboard" aria-label="配信の状況">
@@ -36,6 +36,12 @@
             <p id="overlay-copy">色を見て、武器を選んで、クリック。<br>緑のコメントは撃たずに配信者へ届けよう。</p>
             <div id="intro-tags" class="intro-tags"><span class="tag pass">緑 → 見送り</span><span class="tag delete">青 → DEL</span><span class="tag timeout">黄 → TIME</span><span class="tag ban">赤 → BAN</span></div>
             <div id="result-stats" class="result-stats" hidden></div>
+            <div id="difficulty-picker" class="difficulty-picker" role="group" aria-label="難易度">
+              <button type="button" data-mode="easy" aria-pressed="true">EASY</button>
+              <button type="button" data-mode="normal" aria-pressed="false">NORMAL</button>
+              <button type="button" data-mode="hard" aria-pressed="false">HARD</button>
+            </div>
+            <p id="rank-progress" class="overlay-foot rank-progress" hidden></p>
             <button id="start" class="primary-button">配信をはじめる <span>→</span></button>
             <button id="restart" class="text-button" hidden>最初からやり直す</button>
             <p class="overlay-foot" id="overlay-foot">60秒 / 目標 +240人 / テンション0で配信終了</p>
@@ -50,12 +56,24 @@
           <button class="weapon timeout" data-weapon="timeout" aria-pressed="false"><div class="weapon-top"><kbd>2</kbd><span>単発 / HP 1</span><i></i></div><strong>TIMEOUT</strong><span class="weapon-jp">一時的に止める</span><p>黄色いカードを迎撃</p></button>
           <button class="weapon ban" data-weapon="ban" aria-pressed="false"><div class="weapon-top"><kbd>3</kbd><span>単発 / HP 1</span><i></i></div><strong>BAN</strong><span class="weapon-jp">退場させる</span><p>赤いカードを迎撃</p></button>
         </div>
-        <div class="pass-note"><span class="pass-symbol">↗</span><div><strong>緑は、そのまま。</strong><p>見送りで登録者アップ</p></div></div>
+        <div class="pass-note"><span class="pass-symbol">↗</span><div><strong id="pass-hint">緑は、そのまま。</strong><p>見送りで登録者アップ</p></div></div>
         <div class="controls"><p><kbd>CLICK</kbd><span>射撃</span></p><p><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><span>武器切替</span></p><p><kbd>ESC</kbd><span>一時停止</span></p></div>
       </aside>
     </div>
     <footer><span><i class="status-dot"></i> 開発中・動作確認版</span><span>READ THE COLOR. PROTECT THE STREAM.</span></footer>
     <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
   </main>
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <h2 id="settings-title">設定</h2>
+    <p>全モードの累計登録者とランクを初期状態に戻します。</p>
+    <button id="request-reset" class="icon-button" type="button">戦績をクリア…</button>
+    <div id="reset-confirmation" hidden>
+      <p>戦績をクリアしますか？ 消去した戦績は元に戻せません。</p>
+      <button id="cancel-reset" class="icon-button" type="button">キャンセル</button>
+      <button id="confirm-reset" class="icon-button reset-danger" type="button">戦績を消去する</button>
+    </div>
+    <p id="reset-status" role="status"></p>
+    <form method="dialog"><button class="icon-button" autofocus>閉じる</button></form>
+  </dialog>
 </body>
 </html>
