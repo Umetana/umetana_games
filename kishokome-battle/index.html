@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101421">
+  <title>激闘！キショコメバトル — 初期版</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="data.js"></script>
+  <script defer src="game-core.js"></script>
+  <script defer src="game.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="masthead">
+      <div class="brand"><span class="brand-icon">K!</span><div><p class="eyebrow">COMMENT DEFENSE / PROTOTYPE 01</p><h1>激闘！キショコメバトル<span>迎撃戦</span></h1></div></div>
+      <div class="header-actions"><span class="version">LOCAL / v0.1.0</span><button id="sound" class="icon-button" aria-pressed="false">効果音 OFF</button><button id="pause" class="icon-button" disabled>一時停止 <kbd>Esc</kbd></button></div>
+    </header>
+
+    <section class="dashboard" aria-label="配信の状況">
+      <div class="stat subscribers"><span class="stat-label">CHANNEL SUBSCRIBERS</span><div><strong id="subscribers">1,000</strong><span class="unit">人</span><span id="delta" class="delta">+0</span></div></div>
+      <div class="stat goal"><span class="stat-label">配信目標 <b>+240人</b></span><div class="meter"><span id="goal-bar"></span></div><span id="goal-caption">あと240人で目標達成</span></div>
+      <div class="stat tension"><span class="stat-label">配信者のテンション <b id="tension">100%</b></span><div class="meter"><span id="tension-bar"></span></div><span>問題コメントの到達で低下</span></div>
+      <div class="stat timer"><span class="stat-label">TIME LEFT</span><strong id="timer">60<span>.0</span></strong></div>
+    </section>
+
+    <div class="play-layout">
+      <section class="arena" aria-label="コメント迎撃エリア">
+        <canvas id="game" width="1200" height="720" tabindex="0" aria-label="マウスでカードを狙い、クリックで迎撃。1、2、3キーで武器切替。Escapeで一時停止。"></canvas>
+        <div class="arena-top"><span class="live"><i></i><span id="live-label">STANDBY</span></span><span>雑談配信 / TEST CHANNEL</span><span id="combo">COMBO 00</span></div>
+        <div class="arena-bottom"><span>手前のカードを狙って迎撃</span><span id="weapon-caption">装備中：DELETE</span></div>
+        <div id="overlay" class="overlay">
+          <div class="overlay-panel">
+            <p class="eyebrow" id="overlay-kicker">MODERATOR, READY?</p>
+            <h2 id="overlay-title">そのコメント、<br><em>通していい？</em></h2>
+            <p id="overlay-copy">色を見て、武器を選んで、クリック。<br>緑のコメントは撃たずに配信者へ届けよう。</p>
+            <div id="intro-tags" class="intro-tags"><span class="tag pass">緑 → 見送り</span><span class="tag delete">青 → DEL</span><span class="tag timeout">黄 → TIME</span><span class="tag ban">赤 → BAN</span></div>
+            <div id="result-stats" class="result-stats" hidden></div>
+            <button id="start" class="primary-button">配信をはじめる <span>→</span></button>
+            <button id="restart" class="text-button" hidden>最初からやり直す</button>
+            <p class="overlay-foot" id="overlay-foot">60秒 / 目標 +240人 / テンション0で配信終了</p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="side-heading"><span class="eyebrow">LOADOUT</span><span>武器選択</span></div>
+        <div id="weapons" class="weapons" role="group" aria-label="武器選択">
+          <button class="weapon delete selected" data-weapon="delete" aria-pressed="true"><div class="weapon-top"><kbd>1</kbd><span>単発 / HP 1</span><i></i></div><strong>DELETE</strong><span class="weapon-jp">削除する</span><p>青いカードを迎撃</p></button>
+          <button class="weapon timeout" data-weapon="timeout" aria-pressed="false"><div class="weapon-top"><kbd>2</kbd><span>単発 / HP 1</span><i></i></div><strong>TIMEOUT</strong><span class="weapon-jp">一時的に止める</span><p>黄色いカードを迎撃</p></button>
+          <button class="weapon ban" data-weapon="ban" aria-pressed="false"><div class="weapon-top"><kbd>3</kbd><span>単発 / HP 1</span><i></i></div><strong>BAN</strong><span class="weapon-jp">退場させる</span><p>赤いカードを迎撃</p></button>
+        </div>
+        <div class="pass-note"><span class="pass-symbol">↗</span><div><strong>緑は、そのまま。</strong><p>見送りで登録者アップ</p></div></div>
+        <div class="controls"><p><kbd>CLICK</kbd><span>射撃</span></p><p><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><span>武器切替</span></p><p><kbd>ESC</kbd><span>一時停止</span></p></div>
+      </aside>
+    </div>
+    <footer><span><i class="status-dot"></i> 開発中・動作確認版</span><span>READ THE COLOR. PROTECT THE STREAM.</span></footer>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+  </main>
+</body>
+</html>
