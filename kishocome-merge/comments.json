@@ -1,0 +1,191 @@
+[
+  {
+    "id": "lv1_1",
+    "level": 1,
+    "category": "distance",
+    "text": "今日もいい声",
+    "weight": 1
+  },
+  {
+    "id": "lv1_2",
+    "level": 1,
+    "category": "distance",
+    "text": "今日の配信たのしみ！",
+    "weight": 1
+  },
+  {
+    "id": "lv1_3",
+    "level": 1,
+    "category": "distance",
+    "text": "その話すき",
+    "weight": 1
+  },
+  {
+    "id": "lv2_1",
+    "level": 2,
+    "category": "distance",
+    "text": "声聞けたし今日はいい日",
+    "weight": 1
+  },
+  {
+    "id": "lv2_2",
+    "level": 2,
+    "category": "distance",
+    "text": "おかえりって言ってもいい？",
+    "weight": 1
+  },
+  {
+    "id": "lv2_3",
+    "level": 2,
+    "category": "distance",
+    "text": "その笑い声、覚えちゃった",
+    "weight": 1
+  },
+  {
+    "id": "lv3_1",
+    "level": 3,
+    "category": "distance",
+    "text": "今日も二人で夜ふかしだね",
+    "weight": 1
+  },
+  {
+    "id": "lv3_2",
+    "level": 3,
+    "category": "distance",
+    "text": "その笑い方、私だけ分かるやつ",
+    "weight": 1
+  },
+  {
+    "id": "lv3_3",
+    "level": 3,
+    "category": "distance",
+    "text": "私の席、いつものところで合ってる？",
+    "weight": 1
+  },
+  {
+    "id": "lv4_1",
+    "level": 4,
+    "category": "distance",
+    "text": "同じ時間にあくびした。運命かも",
+    "weight": 1
+  },
+  {
+    "id": "lv4_2",
+    "level": 4,
+    "category": "distance",
+    "text": "今の選択、私と同じ。やっぱり通じてるね",
+    "weight": 1
+  },
+  {
+    "id": "lv4_3",
+    "level": 4,
+    "category": "distance",
+    "text": "サムネの色、私の好きな色にしてくれた？",
+    "weight": 1
+  },
+  {
+    "id": "lv5_1",
+    "level": 5,
+    "category": "distance",
+    "text": "休みの日の予定、二人分考えといた",
+    "weight": 1
+  },
+  {
+    "id": "lv5_2",
+    "level": 5,
+    "category": "distance",
+    "text": "私たちの記念日、初見の日でいいよね",
+    "weight": 1
+  },
+  {
+    "id": "lv5_3",
+    "level": 5,
+    "category": "distance",
+    "text": "家に帰ったらお互いの今日を話す設定にしよ",
+    "weight": 1
+  },
+  {
+    "id": "lv6_1",
+    "level": 6,
+    "category": "distance",
+    "text": "返信はいらないけど、読んだら明日の配信で一回だけ咳して。合図にするね",
+    "weight": 1
+  },
+  {
+    "id": "lv6_2",
+    "level": 6,
+    "category": "distance",
+    "text": "今日配信がない理由を考えてたら夜が明けたよ。とりあえずおはよう",
+    "weight": 1
+  },
+  {
+    "id": "lv6_3",
+    "level": 6,
+    "category": "distance",
+    "text": "他のコメントも読むのは分かるけど、最後に私のだけもう一回読んでくれない？",
+    "weight": 1
+  },
+  {
+    "id": "lv7_1",
+    "level": 7,
+    "category": "distance",
+    "text": "私の名前を言わない日は、逆に意識してるってことにしたよ",
+    "weight": 1
+  },
+  {
+    "id": "lv7_2",
+    "level": 7,
+    "category": "distance",
+    "text": "休むって聞いてないから、私の中ではまだ配信中だよ",
+    "weight": 1
+  },
+  {
+    "id": "lv7_3",
+    "level": 7,
+    "category": "distance",
+    "text": "今日のエンディング、私への伝言として文字起こししておいた",
+    "weight": 1
+  },
+  {
+    "id": "lv8_1",
+    "level": 8,
+    "category": "distance",
+    "text": "配信終わる時間、次から私の許可取ってくれる？",
+    "weight": 1
+  },
+  {
+    "id": "lv8_2",
+    "level": 8,
+    "category": "distance",
+    "text": "その『みんな』の中に私も入れるの、そろそろやめよう？",
+    "weight": 1
+  },
+  {
+    "id": "lv8_3",
+    "level": 8,
+    "category": "distance",
+    "text": "コメント欄を閉じるなら、次は私専用の入口を作ってね",
+    "weight": 1
+  },
+  {
+    "id": "ban_1",
+    "level": "ban",
+    "category": "ban",
+    "text": "今日から配信の予定は私が決めるね。異論は受け付けません",
+    "weight": 1
+  },
+  {
+    "id": "ban_2",
+    "level": "ban",
+    "category": "ban",
+    "text": "私以外のコメント、全部消して。ここは二人の場所だから",
+    "weight": 1
+  },
+  {
+    "id": "ban_3",
+    "level": "ban",
+    "category": "ban",
+    "text": "明日の配信、私と話すまで始めちゃダメ。もう決定ね",
+    "weight": 1
+  }
+]

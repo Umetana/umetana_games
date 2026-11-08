@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#16132a">
+  <title>キショコメ・マージ</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./vendor/matter.min.js" defer></script>
+  <script type="module" src="./main.mjs"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="series">激闘！キショコメバトル ／ ミニゲーム</p>
+      <h1>キショコメ・マージ</h1>
+      <p>同じレベルをくっつけて、濃縮。Lv.8同士で即BAN！</p>
+    </header>
+    <div class="layout">
+      <section class="board" aria-label="ゲームフィールド">
+        <canvas id="field" width="420" height="570" aria-label="コメントカードの盤面"></canvas>
+        <section id="overlay" class="overlay">
+          <h2 id="state">読み込み中…</h2>
+          <p id="message"></p>
+          <fieldset id="gameModes" class="mode-picker" hidden>
+            <legend>モード選択</legend>
+            <div class="mode-options">
+              <label class="mode-option">
+                <input type="radio" name="game-mode" value="classic" checked>
+                <span>通常</span>
+              </label>
+              <label class="mode-option">
+                <input type="radio" name="game-mode" value="flexible">
+                <span>しなるカード</span>
+              </label>
+              <label class="mode-option">
+                <input type="radio" name="game-mode" value="gel">
+                <span>ゲル</span>
+              </label>
+            </div>
+          </fieldset>
+          <div class="actions">
+            <button id="primary" type="button" hidden></button>
+            <button id="secondary" type="button" hidden></button>
+          </div>
+        </section>
+      </section>
+      <aside aria-label="スコアと操作">
+        <div class="scores">
+          <div><span>SCORE</span><strong id="score">0</strong></div>
+          <div><span>BEST</span><strong id="best">0</strong></div>
+        </div>
+        <section class="panel next">
+          <h2>NEXT</h2>
+          <canvas id="nextCard" role="img" aria-label="次のカードなし"></canvas>
+        </section>
+        <section class="panel controls">
+          <h2>操作</h2>
+          <dl>
+            <div><dt>移動</dt><dd><kbd>←</kbd> <kbd>→</kbd> ／ A D</dd></div>
+            <div><dt>回転</dt><dd><kbd>Q</kbd> <kbd>E</kbd>（15°）</dd></div>
+            <div><dt>落下</dt><dd><kbd>Space</kbd></dd></div>
+          </dl>
+          <div class="actions">
+            <button id="pause" type="button" disabled>一時停止</button>
+            <button id="restart" type="button" disabled>やり直す</button>
+            <button id="sound" type="button" aria-pressed="true">SE オン</button>
+          </div>
+          <p class="hint">Escで一時停止 ／ Rでやり直し<br>危険ラインを3秒越えると終了。</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+</body>
+</html>
