@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>激闘！キショコメバトル</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: #faf8ff; background: radial-gradient(ellipse at top, #342656, #141326 72%); font-family: system-ui, sans-serif; }
+    #comment-rain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+    main { position: relative; z-index: 1; width: min(940px, calc(100% - 40px)); margin: auto; padding: 36px 0 64px; }
+    .page-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .page-tools button { font: inherit; color: #dfcfff; background: #211d35; border: 1px solid #796b98; border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+    header { margin: 56px 0 32px; }
+    h1 { margin: 0; font-size: clamp(2rem, 7vw, 4rem); line-height: 1.15; }
+    h1 span { display: inline-block; }
+    h2 { margin: 12px 0 0; }
+    p { line-height: 1.7; }
+    a { color: #dfcfff; }
+    a:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+    .games { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 265px), 1fr)); gap: 18px; }
+    .game { display: flex; flex-direction: column; align-items: flex-start; color: inherit; background: #211d35; border: 1px solid #796b98; padding: 25px; border-radius: 18px; text-decoration: none; }
+    .game:hover { background: #33294b; }
+    .genre { color: #ffbd94; font-weight: 700; }
+    .puzzle .genre { color: #a2f1d2; }
+    .play { margin-top: auto; color: #dfcfff; font-weight: 800; }
+  </style>
+  <script src="./comment-rain.js" defer></script>
+</head>
+<body>
+  <canvas id="comment-rain" aria-hidden="true"></canvas>
+  <main>
+    <div class="page-tools">
+      <a href="../">← うめたなゲームズ</a>
+      <button type="button" id="motion-toggle" hidden>背景演出を再生</button>
+    </div>
+    <header>
+      <p>ミニゲーム集</p>
+      <h1><span>激闘！</span><span>キショコメバトル</span></h1>
+      <p>配信コメントを相手に、どっちで遊ぶ？</p>
+    </header>
+    <nav class="games" aria-label="ゲーム選択">
+      <a class="game" href="../kishokome-battle/">
+        <span class="genre">シューティング</span>
+        <h2>迎撃戦</h2>
+        <p>コメントに合わせて武器を切り替え、問題コメントを迎撃。応援コメントは配信者へ届けよう。</p>
+        <span class="play">遊ぶ →</span>
+      </a>
+      <a class="game puzzle" href="../kishocome-merge/">
+        <span class="genre">落ち物パズル</span>
+        <h2>キショコメ・マージ</h2>
+        <p>同じレベルのコメントを合体させて濃縮。Lv.8同士をくっつけて即BAN！</p>
+        <span class="play">遊ぶ →</span>
+      </a>
+    </nav>
+  </main>
+</body>
+</html>
