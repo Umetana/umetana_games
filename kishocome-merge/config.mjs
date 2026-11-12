@@ -14,6 +14,17 @@ export const config = {
   movePixelsPerSecond: 320,
   dropWeights: [60, 30, 10],
   banScore: 2000,
+  shake: {
+    duration: 700,
+    screenX: 17,
+    screenY: 13,
+    pulses: [
+      { at: 0, x: -7, lift: 3 },
+      { at: 155, x: 12, lift: 4 },
+      { at: 310, x: -12, lift: 4 },
+      { at: 490, x: 2, lift: 9 },
+    ],
+  },
   mergeEffectMs: 440,
   banEffectMs: 720,
   volume: 0.12,

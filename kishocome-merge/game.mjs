@@ -50,6 +50,7 @@ export class MergeGame {
     this.effects = [];
     this.score = 0;
     this.time = 0;
+    this.shake = null;
     this.danger = 0;
     this.pending = null;
     this.over = false;
@@ -128,10 +129,40 @@ export class MergeGame {
     this.onMerge?.(ban, this.score);
   }
 
+  canShake() {
+    return !this.over && !this.shake && this.cards.size > 0;
+  }
+
+  startShake() {
+    if (!this.canShake()) return false;
+    this.shake = { started: this.time, nextPulse: 0 };
+    return true;
+  }
+
+  applyShakePulses() {
+    if (!this.shake) return;
+    const { Body } = this.matter;
+    const elapsed = this.time - this.shake.started;
+    const { pulses } = config.shake;
+    while (this.shake.nextPulse < pulses.length && elapsed >= pulses[this.shake.nextPulse].at) {
+      const pulse = pulses[this.shake.nextPulse++];
+      for (const { body } of this.cards.values()) {
+        const height = clamp((config.height - body.position.y) / (config.height - config.dangerY), 0, 1);
+        const side = body.position.x / config.width * 2 - 1;
+        Body.setVelocity(body, {
+          x: body.velocity.x + pulse.x * (0.72 + height * 0.28),
+          y: body.velocity.y - pulse.lift * (0.46 + height * 0.72),
+        });
+        Body.setAngularVelocity(body, clamp(body.angularVelocity + (pulse.x * 0.008 - side * 0.05), -0.20, 0.20));
+      }
+    }
+  }
+
   step(direction = 0) {
     if (this.over) return;
     const { Body, Engine } = this.matter;
     this.time += config.stepMs;
+    this.applyShakePulses();
     this.aim(direction * config.movePixelsPerSecond * config.stepMs / 1000);
     for (const card of this.cards.values()) {
       const { body } = card;

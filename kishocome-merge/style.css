@@ -28,6 +28,9 @@ h1 { margin: 2px 0; font-size: clamp(1.55rem, 5vw, 2.6rem); }
   outline: 1px solid var(--line);
   background: #201a33;
 }
+@media (prefers-reduced-motion: no-preference) {
+  .board { transform: translate(var(--shake-x, 0px), var(--shake-y, 0px)); }
+}
 canvas { width: 100%; height: auto; display: block; }
 .overlay {
   position: absolute;
@@ -91,6 +94,45 @@ button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 button:disabled { opacity: .5; cursor: default; }
 #primary { background: #ff8bb1; color: #23102a; font-weight: 800; }
 .hint { font-size: .8rem; margin: 12px 0 0; color: var(--muted); }
+.touch-controls { display: none; }
+@media (any-pointer: coarse), (max-width: 620px) {
+  .touch-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  .touch-controls button {
+    min-height: 46px;
+    padding: 4px 2px;
+    font-size: 1.2rem;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .touch-controls [data-move] { touch-action: none; }
+  .touch-controls [data-drop] { background: var(--accent); color: #23102a; font-size: .95rem; font-weight: 800; }
+  .touch-controls button:active { filter: brightness(1.25); }
+}
 @media (max-width: 620px) {
-  .layout { grid-template-columns: minmax(0, 420px); justify-content: center; }
+  main { width: min(420px, calc(100% - 20px)); padding: 10px 0; }
+  header { margin-bottom: 8px; }
+  header > p:last-child { display: none; }
+  .layout { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  aside { display: contents; }
+  .scores { grid-column: 1; grid-row: 1; gap: 4px; }
+  .scores > div, .next { padding: 4px 5px; min-height: 0; }
+  .scores span, .next h2 { font-size: .65rem; }
+  .scores strong { font-size: 1rem; overflow-wrap: anywhere; }
+  .next { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 4px; }
+  .next h2 { margin: 0; }
+  .next canvas { width: min(100%, 94px); min-width: 0; }
+  .play-area { grid-column: 1 / -1; grid-row: 2; }
+  .board {
+    width: min(100%, max(220px, calc((100svh - 290px) * 420 / 570)));
+    margin-inline: auto;
+  }
+  .overlay { padding: 12px; }
+  .controls { grid-column: 1 / -1; grid-row: 3; padding: 5px; }
+  .controls h2, .controls dl, .controls .hint { display: none; }
+  .controls button { min-height: 44px; font-size: .78rem; }
 }

@@ -17,34 +17,43 @@
       <p>同じレベルをくっつけて、濃縮。Lv.8同士で即BAN！</p>
     </header>
     <div class="layout">
-      <section class="board" aria-label="ゲームフィールド">
-        <canvas id="field" width="420" height="570" aria-label="コメントカードの盤面"></canvas>
-        <section id="overlay" class="overlay">
-          <h2 id="state">読み込み中…</h2>
-          <p id="message"></p>
-          <fieldset id="gameModes" class="mode-picker" hidden>
-            <legend>モード選択</legend>
-            <div class="mode-options">
-              <label class="mode-option">
-                <input type="radio" name="game-mode" value="classic" checked>
-                <span>通常</span>
-              </label>
-              <label class="mode-option">
-                <input type="radio" name="game-mode" value="flexible">
-                <span>しなるカード</span>
-              </label>
-              <label class="mode-option">
-                <input type="radio" name="game-mode" value="gel">
-                <span>ゲル</span>
-              </label>
+      <div class="play-area">
+        <section id="board" class="board" aria-label="ゲームフィールド">
+          <canvas id="field" width="420" height="570" aria-label="コメントカードの盤面"></canvas>
+          <section id="overlay" class="overlay">
+            <h2 id="state">読み込み中…</h2>
+            <p id="message"></p>
+            <fieldset id="gameModes" class="mode-picker" hidden>
+              <legend>モード選択</legend>
+              <div class="mode-options">
+                <label class="mode-option">
+                  <input type="radio" name="game-mode" value="classic" checked>
+                  <span>通常</span>
+                </label>
+                <label class="mode-option">
+                  <input type="radio" name="game-mode" value="flexible">
+                  <span>しなるカード</span>
+                </label>
+                <label class="mode-option">
+                  <input type="radio" name="game-mode" value="gel">
+                  <span>ゲル</span>
+                </label>
+              </div>
+            </fieldset>
+            <div class="actions">
+              <button id="primary" type="button" hidden></button>
+              <button id="secondary" type="button" hidden></button>
             </div>
-          </fieldset>
-          <div class="actions">
-            <button id="primary" type="button" hidden></button>
-            <button id="secondary" type="button" hidden></button>
-          </div>
+          </section>
         </section>
-      </section>
+        <div id="touchControls" class="touch-controls" role="group" aria-label="ゲーム操作" hidden>
+          <button type="button" data-move="-1" aria-label="左に移動">←</button>
+          <button type="button" data-turn="-1" aria-label="左に回転">↶</button>
+          <button type="button" data-drop>落とす</button>
+          <button type="button" data-turn="1" aria-label="右に回転">↷</button>
+          <button type="button" data-move="1" aria-label="右に移動">→</button>
+        </div>
+      </div>
       <aside aria-label="スコアと操作">
         <div class="scores">
           <div><span>SCORE</span><strong id="score">0</strong></div>
@@ -62,11 +71,12 @@
             <div><dt>落下</dt><dd><kbd>Space</kbd></dd></div>
           </dl>
           <div class="actions">
+            <button id="shake" type="button" disabled>シェイク（残り1回）</button>
             <button id="pause" type="button" disabled>一時停止</button>
             <button id="restart" type="button" disabled>やり直す</button>
             <button id="sound" type="button" aria-pressed="true">SE オン</button>
           </div>
-          <p class="hint">Escで一時停止 ／ Rでやり直し<br>危険ラインを3秒越えると終了。</p>
+          <p class="hint">Fでシェイク（1プレイ1回）<br>Escで一時停止 ／ Rでやり直し<br>危険ラインを3秒越えると終了。</p>
         </section>
       </aside>
     </div>

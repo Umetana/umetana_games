@@ -3,8 +3,8 @@ import { MergeGame, readComments } from './game.mjs';
 import { createNextRenderer, createRenderer } from './render.mjs';
 
 const ui = Object.fromEntries([
-  'field', 'overlay', 'state', 'message', 'primary', 'secondary', 'score',
-  'best', 'nextCard', 'gameModes', 'pause', 'restart', 'sound',
+  'board', 'field', 'overlay', 'state', 'message', 'primary', 'secondary', 'score',
+  'best', 'nextCard', 'gameModes', 'pause', 'restart', 'shake', 'sound', 'touchControls',
 ].map(id => [id, document.getElementById(id)]));
 
 const storagePrefix = 'kishocome-merge:';
@@ -93,6 +93,7 @@ async function init() {
   });
 
   const pressed = new Set();
+  const touchMoves = new Map();
   const left = ['ArrowLeft', 'KeyA'];
   const right = ['ArrowRight', 'KeyD'];
   let mode = 'title';
@@ -107,15 +108,45 @@ async function init() {
     drawNext(next);
   }
 
+  function refreshShake() {
+    ui.shake.disabled = mode !== 'playing' || !game.canShake();
+    const label = game.shake ? 'シェイク済み' : 'シェイク（残り1回）';
+    if (ui.shake.textContent !== label) ui.shake.textContent = label;
+
+    const elapsed = game.shake ? game.time - game.shake.started : Infinity;
+    const { duration, screenX, screenY } = config.shake;
+    if (mode !== 'playing' || elapsed >= duration) {
+      ui.board.style.removeProperty('--shake-x');
+      ui.board.style.removeProperty('--shake-y');
+      return;
+    }
+    const progress = elapsed / duration;
+    const damping = 1 - progress;
+    const horizontal = -Math.sin(elapsed * Math.PI / 155) * screenX * damping;
+    const kick = Math.max(0, 1 - Math.abs(elapsed - 530) / 75);
+    const vertical = Math.sin(progress * Math.PI * 6) * 4 * damping - screenY * kick;
+    ui.board.style.setProperty('--shake-x', horizontal + 'px');
+    ui.board.style.setProperty('--shake-y', vertical + 'px');
+  }
+
+  function shake() {
+    if (mode !== 'playing' || !game.startShake()) return;
+    ui.shake.blur();
+    refreshShake();
+  }
+
   function changeMode(nextMode) {
     mode = nextMode;
     pressed.clear();
+    touchMoves.clear();
+    ui.touchControls.hidden = mode !== 'playing';
     elapsed = 0;
     ui.pause.disabled = !['playing', 'paused'].includes(mode);
     ui.restart.disabled = ui.pause.disabled;
     ui.pause.textContent = mode === 'paused' ? '再開' : '一時停止';
     ui.overlay.hidden = mode === 'playing';
     refreshNext();
+    refreshShake();
     if (mode === 'playing' && document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }
 
@@ -164,8 +195,39 @@ async function init() {
     ui.best.textContent = loadBest(ui.gameModes.querySelector('input:checked').value);
   };
   ui.pause.onclick = pause;
+  ui.shake.onclick = shake;
   ui.restart.onclick = restart;
-  const gameKeys = new Set([...left, ...right, 'KeyQ', 'KeyE', 'Space', 'Escape', 'KeyR']);
+  function drop() {
+    if (mode !== 'playing') return;
+    unlockAudio();
+    game.drop();
+    refreshNext();
+  }
+
+  for (const button of ui.touchControls.querySelectorAll('[data-move]')) {
+    const direction = Number(button.dataset.move);
+    button.addEventListener('pointerdown', event => {
+      if (mode !== 'playing' || event.button !== 0) return;
+      event.preventDefault();
+      button.setPointerCapture(event.pointerId);
+      touchMoves.set(event.pointerId, direction);
+      game.aim(direction * 8);
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+      button.addEventListener(type, event => touchMoves.delete(event.pointerId));
+    }
+    button.addEventListener('click', event => {
+      if (mode === 'playing' && event.detail === 0) game.aim(direction * 8);
+    });
+  }
+  for (const button of ui.touchControls.querySelectorAll('[data-turn]')) {
+    button.onclick = () => {
+      if (mode === 'playing') game.aim(0, Number(button.dataset.turn) * config.rotateDegrees);
+    };
+  }
+  ui.touchControls.querySelector('[data-drop]').onclick = drop;
+
+  const gameKeys = new Set([...left, ...right, 'KeyQ', 'KeyE', 'Space', 'Escape', 'KeyR', 'KeyF']);
   window.addEventListener('keydown', event => {
     if (!gameKeys.has(event.code) || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'Space' && event.target instanceof HTMLButtonElement) return;
@@ -179,16 +241,16 @@ async function init() {
     }
     if (event.code === 'KeyR') restart();
     if (mode !== 'playing') return;
+    if (event.code === 'KeyF') shake();
     if (event.code === 'KeyQ') game.aim(0, -config.rotateDegrees);
     if (event.code === 'KeyE') game.aim(0, config.rotateDegrees);
-    if (event.code === 'Space') {
-      unlockAudio();
-      game.drop();
-      refreshNext();
-    }
+    if (event.code === 'Space') drop();
   });
   window.addEventListener('keyup', event => pressed.delete(event.code));
-  window.addEventListener('blur', () => pressed.clear());
+  window.addEventListener('blur', () => {
+    pressed.clear();
+    touchMoves.clear();
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && mode === 'playing') pause();
   });
@@ -198,7 +260,13 @@ async function init() {
     previousTime = now;
     if (mode === 'playing') {
       elapsed += delta;
-      const direction = Number(right.some(key => pressed.has(key))) - Number(left.some(key => pressed.has(key)));
+      let moveLeft = left.some(key => pressed.has(key));
+      let moveRight = right.some(key => pressed.has(key));
+      for (const direction of touchMoves.values()) {
+        moveLeft ||= direction < 0;
+        moveRight ||= direction > 0;
+      }
+      const direction = Number(moveRight) - Number(moveLeft);
       while (elapsed >= config.stepMs && !game.over) {
         game.step(direction);
         elapsed -= config.stepMs;
@@ -210,6 +278,7 @@ async function init() {
       }
     }
     draw(game);
+    refreshShake();
     requestAnimationFrame(frame);
   }
 
